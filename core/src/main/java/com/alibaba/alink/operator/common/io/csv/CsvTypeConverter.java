@@ -85,6 +85,7 @@ public class CsvTypeConverter {
 		List <TransformerBase <?>> toTensorList = new ArrayList <>();
 
 		for (int i = 0; i < colTypes.length; ++i) {
+			// 判断是否是张量类型
 			if (AlinkTypes.isTensorType(colTypes[i])) {
 
 				Params localParam = params.clone();

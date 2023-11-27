@@ -59,6 +59,8 @@ import java.util.function.Function;
 
 /**
  * Base class of batch algorithm operators.
+ * 批操作基类
+ *
  * <p>
  * <p>This class extends {@link AlgoOperator} to support data transmission between BatchOperators.
  */

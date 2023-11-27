@@ -3,6 +3,8 @@ package org.apache.flink.ml.api.misc.param;
 /**
  * Interface for the object, which need set/get parameters.
  *
+ * 参数类
+ *
  * @param <T> the type of the object
  */
 public interface WithParams<T> {

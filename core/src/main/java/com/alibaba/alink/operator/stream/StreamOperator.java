@@ -33,6 +33,9 @@ import java.util.function.Function;
 
 /**
  * Base class of stream algorithm operators.
+ *
+ * 流操作基类
+ *
  * <p>
  * <p>This class extends {@link AlgoOperator} to support data transmission between StreamOperator.
  */

@@ -15,6 +15,7 @@ import com.alibaba.alink.params.io.HasIoType;
 
 /**
  * The base class of all data sources.
+ * 源数据操作基础类
  *
  * @param <T>
  */
