@@ -19,6 +19,8 @@ import com.alibaba.alink.params.io.CsvSourceParams;
 
 /**
  * Data source of a CSV (Comma Separated Values) file.
+ * csv文件处理
+ *
  * <p>
  * The file can reside in places including:
  * <p><ul>
@@ -65,21 +67,33 @@ public class CsvSourceBatchOp extends BaseSourceBatchOp <CsvSourceBatchOp>
 		);
 	}
 
+	/**
+	 * 初始化数据源
+	 *
+	 * @return
+	 */
 	@Override
 	protected Table initializeDataSource() {
+		// 根据传入的schema， 生成TableSchema, 这里注意 TableSchema 实际flink中的对象
 		TableSchema schema = TableUtil.schemaStr2Schema(getSchemaStr());
+		// 列名称
 		String[] colNames = schema.getFieldNames();
+		// 列类型
 		TypeInformation <?>[] colTypes = schema.getFieldTypes();
 
+		// 设置 SCHEMA_STR参数
 		Params rawCsvParams = getParams().clone()
 			.set(
 				CsvSourceParams.SCHEMA_STR,
+				// 将schema转为string 类型
 				TableUtil.schema2SchemaStr(new TableSchema(colNames, CsvTypeConverter.rewriteColTypes(colTypes)))
 			);
 
 			BatchOperator <?> source = new InternalCsvSourceBetaBatchOp(rawCsvParams);
 
+		// 张量处理
 		source = CsvTypeConverter.toTensorPipelineModel(getParams(), colNames, colTypes).transform(source);
+		// 向量处理
 		source = CsvTypeConverter.toVectorPipelineModel(getParams(), colNames, colTypes).transform(source);
 		source = CsvTypeConverter.toMTablePipelineModel(getParams(), colNames, colTypes).transform(source);
 

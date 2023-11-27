@@ -18,6 +18,8 @@ import java.lang.reflect.Field;
 /**
  * Base class for algorithm operators.
  *
+ * 算法操作基类
+ *
  * <p>Base class for the algorithm operators. It hosts the parameters and output
  * tables of an algorithm operator. Each AlgoOperator may have one or more output tables.
  * One of the output table is the primary output table which can be obtained by calling
@@ -32,16 +34,21 @@ public abstract class AlgoOperator<T extends AlgoOperator <T>>
 	private static final long serialVersionUID = 5891637813713246040L;
 	/**
 	 * Params for algorithms.
+	 * 算法参数
+	 *
 	 */
 	private Params params;
 
 	/**
 	 * The table held by operator.
+	 * 主结果输出
 	 */
 	private Table output = null;
 
 	/**
 	 * The side outputs of operator that be similar to the stream's side outputs.
+	 *
+	 * 副结果输出， 一般一个操作对应一个输出， 但是个别情况下，会有多个输出
 	 */
 	private Table[] sideOutputs = null;
 
