@@ -7,7 +7,7 @@ import org.apache.flink.types.Row;
 import com.alibaba.alink.common.MTable;
 import com.alibaba.alink.operator.common.statistics.basicstatistic.TableSummary;
 import com.alibaba.alink.operator.local.LocalOperator;
-import com.alibaba.alink.operator.local.sql.GroupByLocalOp2;
+import com.alibaba.alink.operator.local.sql.GroupByLocalOp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +37,10 @@ public class StatInsight {
 				valueSet.add(row.getField(0));
 				count++;
 			}
+		}
+		// ignore 0 data
+		if (valueSet.size() == 0) {
+			return insight;
 		}
 		LayoutData layoutData = new LayoutData();
 		if (!isNumberType(type)) {
@@ -94,7 +98,7 @@ public class StatInsight {
 		}
 		//System.out.println("group sql: " + sbdAggr);
 
-		LocalOperator <?> groupByOp = new GroupByLocalOp2(groupByClause, sbdAggr.toString());
+		LocalOperator <?> groupByOp = new GroupByLocalOp(groupByClause, sbdAggr.toString());
 		dataAggr = dataAggr.link(groupByOp);
 
 		Insight insight = new Insight();
@@ -132,12 +136,12 @@ public class StatInsight {
 			}
 		}
 		for (Entry <String, List<Integer>> entry : measureMap.entrySet()) {
-			if (entry.getValue().size() <= 1) {
-				continue;
-			}
+			//if (entry.getValue().size() <= 1) {
+			//	continue;
+			//}
 			List<Integer> idxList = entry.getValue();
 			// 增加count的索引
-			if (countIdx >= 0) {
+			if (countIdx >= 0 && entry.getValue().size() > 1) {
 				idxList.add(countIdx);
 			}
 			Insight insight = new Insight();

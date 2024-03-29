@@ -6,7 +6,7 @@ import com.alibaba.alink.common.MTable;
 import com.alibaba.alink.common.utils.TableUtil;
 import com.alibaba.alink.operator.local.LocalOperator;
 import com.alibaba.alink.operator.local.source.MemSourceLocalOp;
-import com.alibaba.alink.operator.local.sql.GroupByLocalOp2;
+import com.alibaba.alink.operator.local.sql.GroupByLocalOp;
 import com.alibaba.alink.params.statistics.HasIsSingleThread;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class AggregationQuery {
 					MEASURE_NAME_PREFIX).append(i);
 		}
 
-		LocalOperator <?> groupByOp = new GroupByLocalOp2(groupByClause, sbdAggr.toString());
+		LocalOperator <?> groupByOp = new GroupByLocalOp(groupByClause, sbdAggr.toString());
 		groupByOp.set(HasIsSingleThread.THREAD_NUM, threadNum);
 
 		dataQuery = subData.link(groupByOp);
@@ -113,7 +113,7 @@ public class AggregationQuery {
 					MEASURE_NAME_PREFIX).append(i);
 		}
 
-		LocalOperator <?> groupOp = new GroupByLocalOp2(groupByClause, sbdAggr.toString());
+		LocalOperator <?> groupOp = new GroupByLocalOp(groupByClause, sbdAggr.toString());
 		groupOp.getParams().set(HasIsSingleThread.THREAD_NUM, threadNum);
 
 		LocalOperator <?> dataQuery = source.link(groupOp);
@@ -142,6 +142,51 @@ public class AggregationQuery {
 				result.add(new MemSourceLocalOp(list.get(i), mt.getSchemaStr()));
 			}
 		}
+		return result;
+	}
+
+	public static List <LocalOperator <?>> sameSubspaceColQuery2(LocalOperator <?> source,
+																 String subspaceCol,
+																 List <Subspace> subspaces,
+																 Breakdown breakdown,
+																 List <Measure> measures,
+																 int threadNum) {
+		String groupByClause = "`" + subspaceCol + "`" + ", `" + breakdown.colName + "`";
+		StringBuilder sbdAggr = new StringBuilder();
+		sbdAggr.append(groupByClause);
+		for (int i = 0; i < measures.size(); i++) {
+			Measure measure = measures.get(i);
+			sbdAggr.append(", ").append(measure.aggr.udfName()).append("(`").append(measure.colName).append("`) AS ")
+				.append(
+					MEASURE_NAME_PREFIX).append(i);
+		}
+
+		LocalOperator <?> groupOp = new GroupByLocalOp(groupByClause, sbdAggr.toString());
+		groupOp.getParams().set(HasIsSingleThread.THREAD_NUM, threadNum);
+
+		LocalOperator <?> dataQuery = source.link(groupOp);
+		List <LocalOperator <?>> result = new ArrayList <>();
+		List <List <Row>> list = new ArrayList <>();
+		Map <Object, Integer> indexMap = new HashMap <>();
+		for (int i = 0; i < subspaces.size(); i++) {
+			List <Row> rows = new ArrayList <>();
+			list.add(rows);
+			indexMap.put(subspaces.get(i).value, i);
+		}
+
+		MTable mt = dataQuery.getOutputTable();
+		for (Row r : mt.getRows()) {
+			Object value = r.getField(0);
+			if (!indexMap.containsKey(value)) {
+				continue;
+			}
+			int idx = indexMap.get(value);
+			list.get(idx).add(r);
+		}
+		for (int i = 0; i < list.size(); i++) {
+			result.add(new MemSourceLocalOp(list.get(i), mt.getSchemaStr()));
+		}
+
 		return result;
 	}
 

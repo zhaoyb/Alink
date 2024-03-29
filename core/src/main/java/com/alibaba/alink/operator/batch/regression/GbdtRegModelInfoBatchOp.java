@@ -22,7 +22,7 @@ public class GbdtRegModelInfoBatchOp
 	}
 
 	@Override
-	protected GbdtModelInfo createModelInfo(List <Row> rows) {
+	public GbdtModelInfo createModelInfo(List <Row> rows) {
 		return new GbdtModelInfo(rows);
 	}
 }

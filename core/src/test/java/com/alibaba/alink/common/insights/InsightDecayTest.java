@@ -61,17 +61,17 @@ public class InsightDecayTest {
 	@Test
 	@Ignore
 	public void testWithoutDecay() throws Exception {
-		LocalOperator <?> data = Data.getEmissionLocalSource();
+		LocalOperator <?> data = Data.getCarSalesLocalSource();
 		List <Insight> insights = AutoDiscovery.find(data, 20);
-		List <Insight> filterInsights = new ArrayList <>();
-		String colName = "ProducerType";
-		for (Insight insight : insights) {
-			if (null != insight.layout.xAxis && insight.layout.xAxis.contains(colName) || null != insight.layout.yAxis && insight.layout.yAxis.contains(colName)) {
-				filterInsights.add(insight);
-			}
-		}
+		//List <Insight> filterInsights = new ArrayList <>();
+		//String colName = "ProducerType";
+		//for (Insight insight : insights) {
+		//	if (null != insight.layout.xAxis && insight.layout.xAxis.contains(colName) || null != insight.layout.yAxis && insight.layout.yAxis.contains(colName)) {
+		//		filterInsights.add(insight);
+		//	}
+		//}
 
-		List<Insight> sortInsights = InsightDecay.sortInsights(filterInsights, 0.6);
+		List<Insight> sortInsights = InsightDecay.sortInsights(insights, 0.6);
 		//
 		//for (Insight insight : insights) {
 		//	insight.score *= insightDecay.getInsightDecay(insight);
@@ -84,7 +84,7 @@ public class InsightDecayTest {
 		//	}
 		//});
 		ToReport toReport = new ToReport(sortInsights);
-		toReport.withHtml("ProducerTypeEmission", true, 200);
+		toReport.withHtml("CarSales", true, 500);
 
 
 		LocalOperator.execute();

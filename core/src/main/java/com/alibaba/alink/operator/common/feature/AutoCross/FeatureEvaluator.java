@@ -16,15 +16,14 @@ import com.alibaba.alink.common.utils.JsonConverter;
 import com.alibaba.alink.operator.common.evaluation.BinaryClassMetrics;
 import com.alibaba.alink.operator.common.evaluation.BinaryMetricsSummary;
 import com.alibaba.alink.operator.common.evaluation.EvaluationUtil;
+import com.alibaba.alink.operator.common.linear.BaseLinearModelTrainBatchOp;
 import com.alibaba.alink.operator.common.linear.LinearModelData;
 import com.alibaba.alink.operator.common.linear.LinearModelDataConverter;
 import com.alibaba.alink.operator.common.linear.LinearModelMapper;
 import com.alibaba.alink.operator.common.linear.LinearModelType;
 import com.alibaba.alink.operator.common.optim.LocalOptimizer;
 import com.alibaba.alink.operator.common.optim.objfunc.OptimObjFunc;
-import com.alibaba.alink.operator.local.classification.BaseLinearModelTrainLocalOp;
 import com.alibaba.alink.params.classification.LinearModelMapperParams;
-import com.alibaba.alink.params.shared.HasNumThreads;
 import com.alibaba.alink.params.shared.linear.LinearTrainParams;
 
 import java.util.ArrayList;
@@ -127,7 +126,7 @@ public class FeatureEvaluator {
 		meta.set(LinearTrainParams.LABEL_COL, null);
 		meta.set(ModelParamName.FEATURE_TYPES, null);
 
-		return BaseLinearModelTrainLocalOp.buildLinearModelData(meta,
+		return BaseLinearModelTrainBatchOp.buildLinearModelData(meta,
 			null,
 			Types.DOUBLE,
 			null,

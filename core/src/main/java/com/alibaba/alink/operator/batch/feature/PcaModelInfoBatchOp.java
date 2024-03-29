@@ -23,7 +23,7 @@ public class PcaModelInfoBatchOp
 	}
 
 	@Override
-	protected PcaModelData createModelInfo(List <Row> rows) {
+	public PcaModelData createModelInfo(List <Row> rows) {
 		return new PcaModelDataConverter().load(rows);
 	}
 

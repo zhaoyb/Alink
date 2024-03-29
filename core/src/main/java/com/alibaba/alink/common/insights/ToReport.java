@@ -52,6 +52,7 @@ public class ToReport {
 				);
 			} catch (Exception ex) {
 				System.out.println(insight);
+				System.out.println(insight.layout.data);
 				ex.printStackTrace();
 			}
 

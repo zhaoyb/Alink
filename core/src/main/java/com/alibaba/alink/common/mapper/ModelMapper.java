@@ -45,6 +45,11 @@ public abstract class ModelMapper extends Mapper {
 		checkIoSchema();
 
 		initializeSliced();
+
+		if (null != ioSchema) {
+			outputFieldSize = getOutputSchema().getFieldNames().length;
+		}
+
 	}
 
 	protected final TableSchema getModelSchema() {

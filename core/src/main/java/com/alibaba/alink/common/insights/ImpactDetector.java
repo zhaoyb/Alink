@@ -19,11 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class ImpactDetector {
-	final double threshold;
+	double threshold;
 
 	String[] colNames;
 	Map <String, Integer> colNameMap;
@@ -49,71 +47,58 @@ public class ImpactDetector {
 		final int totalCount = table.getOutputTable().getNumRow();
 		final int minCount = (int) Math.round(totalCount * this.threshold);
 
-		int type = 1;
-		if (type == 1) {
-			int breakDownColNum = breakdownCols.length;
+		int breakDownColNum = breakdownCols.length;
 
-			if (threadNum == 1) {
-				for (int j = 0; j < breakDownColNum; j++) {
-					Map <Object, MutableInteger> maps = groupCount(table, colNames[j]);
-					for (Map.Entry <Object, MutableInteger> entry : maps.entrySet()) {
-						if (entry.getValue().getValue() > minCount) {
-							valueMaps[j].put(entry.getKey(),
-								entry.getValue().getValue() / (double) totalCount);
-						}
+		if (threadNum == 1) {
+			for (int j = 0; j < breakDownColNum; j++) {
+				Map <Object, MutableInteger> maps = groupCount(table, colNames[j]);
+				for (Map.Entry <Object, MutableInteger> entry : maps.entrySet()) {
+					if (entry.getValue().getValue() > minCount) {
+						valueMaps[j].put(entry.getKey(),
+							entry.getValue().getValue() / (double) totalCount);
 					}
 				}
-			} else {
-				final TaskRunner taskRunner = new TaskRunner();
-				for (int i = 0; i < threadNum; ++i) {
-					final int start = (int) AlinkLocalSession.DISTRIBUTOR.startPos(i, threadNum, breakDownColNum);
-					final int cnt = (int) AlinkLocalSession.DISTRIBUTOR.localRowCnt(i, threadNum, breakDownColNum);
+			}
+		} else {
+			final TaskRunner taskRunner = new TaskRunner();
+			for (int i = 0; i < threadNum; ++i) {
+				final int start = (int) AlinkLocalSession.DISTRIBUTOR.startPos(i, threadNum, breakDownColNum);
+				final int cnt = (int) AlinkLocalSession.DISTRIBUTOR.localRowCnt(i, threadNum, breakDownColNum);
 
-					if (cnt <= 0) {continue;}
+				if (cnt <= 0) {continue;}
 
-					taskRunner.submit(() -> {
-						for (int j = start; j < Math.min(start + cnt, breakDownColNum); j++) {
-							Map <Object, MutableInteger> maps = groupCount(table, colNames[j]);
-							for (Map.Entry <Object, MutableInteger> entry : maps.entrySet()) {
-								if (entry.getValue().getValue() > minCount) {
-									valueMaps[j].put(entry.getKey(),
-										entry.getValue().getValue() / (double) totalCount);
-								}
+				taskRunner.submit(() -> {
+					for (int j = start; j < Math.min(start + cnt, breakDownColNum); j++) {
+						Map <Object, MutableInteger> maps = groupCount(table, colNames[j]);
+						for (Map.Entry <Object, MutableInteger> entry : maps.entrySet()) {
+							if (entry.getValue().getValue() > minCount) {
+								valueMaps[j].put(entry.getKey(),
+									entry.getValue().getValue() / (double) totalCount);
 							}
 						}
-					});
-				}
-
-				taskRunner.join();
+					}
+				});
 			}
-		} else if (type == 2) {
+
+			taskRunner.join();
+		}
+	}
+
+	public void reDetect(double newImpactThreshold) {
+		if (newImpactThreshold > threshold) {
+			Map <Object, Double>[] newValueMaps = new Map[colNames.length];
 			for (int i = 0; i < colNames.length; i++) {
-				String colName = "`" + colNames[i] + "`";
-				List <Row> rows;
-				//if (AutoDiscovery.isTimestampCol(table.getSchema(), colNames[i])) {
-				//	String tmpTsCol = "__alink_ts_tmp__";
-				//	String selectSql1 = String.format("unix_timestamp_macro(%s) as %s, *", colName, tmpTsCol);
-				//	String groupSql = tmpTsCol + ", COUNT(" + tmpTsCol + ") AS cnt";
-				//	String selectSql2 = String.format("to_timestamp_micro(%s) as %s, %s", tmpTsCol, colName, "cnt");
-				//	rows = table
-				//		.select(selectSql1)
-				//		.groupBy(tmpTsCol, groupSql)
-				//		.select(selectSql2)
-				//		.filter("cnt>=" + minCount)
-				//		.getOutputTable()
-				//		.getRows();
-				//	for (Row row : rows) {
-				//		valueMaps[i].put(row.getField(0), ((Number) row.getField(1)).doubleValue() / totalCount);
-				//	}
-				//} else {
-					Map <Object, MutableInteger> maps = groupCount(table, colNames[i]);
-					for (Map.Entry <Object, MutableInteger> entry : maps.entrySet()) {
-						if (entry.getValue().getValue() > minCount) {
-							valueMaps[i].put(entry.getKey(), entry.getValue().getValue() / (double) totalCount);
-						}
+				newValueMaps[i] = new HashMap <>();
+			}
+			for (int j = 0; j < colNames.length; j++) {
+				for (Entry <Object, Double> entry : valueMaps[j].entrySet()) {
+					if (entry.getValue() >= newImpactThreshold) {
+						newValueMaps[j].put(entry.getKey(), entry.getValue());
 					}
 				}
-			//}
+			}
+			this.valueMaps = newValueMaps;
+			this.threshold = newImpactThreshold;
 		}
 	}
 

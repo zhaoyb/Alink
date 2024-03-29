@@ -22,7 +22,7 @@ public final class DecisionTreeModelInfoBatchOp
 	}
 
 	@Override
-	protected DecisionTreeModelInfo createModelInfo(List <Row> rows) {
+	public DecisionTreeModelInfo createModelInfo(List <Row> rows) {
 		return new DecisionTreeModelInfo(rows);
 	}
 }

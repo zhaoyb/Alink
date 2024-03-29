@@ -25,7 +25,7 @@ public final class Id3ModelInfoBatchOp
 	}
 
 	@Override
-	protected DecisionTreeModelInfo createModelInfo(List <Row> rows) {
+	public DecisionTreeModelInfo createModelInfo(List <Row> rows) {
 		return new DecisionTreeModelInfo(rows);
 	}
 }

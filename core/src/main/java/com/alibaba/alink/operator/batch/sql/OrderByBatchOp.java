@@ -39,7 +39,7 @@ public final class OrderByBatchOp extends BaseSqlApiBatchOp <OrderByBatchOp>
 
 	@Override
 	public OrderByBatchOp linkFrom(BatchOperator <?>... inputs) {
-		BatchOperator outputOp;
+		BatchOperator<?> outputOp;
 		int limit = getOrderByParamWithDefault(OrderByParams.LIMIT);
 		boolean isAscending = getOrder().equalsIgnoreCase("asc");
 		if (limit >= 0) {

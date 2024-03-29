@@ -5,6 +5,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -234,21 +235,59 @@ public class InsightDecay {
 				return -Double.compare(o1.score, o2.score);
 			}
 		};
+		double mapTotalInsightNum = 0;
+		double maxInsightNum = 0;
 		for (Insight insight : insights) {
 			if (insight.score >= lowScore && insight.score < highScore) {
 				if (!topInsightsMap.containsKey(insight.type)) {
 					topInsightsMap.put(insight.type, new ArrayList <>());
 				}
 				topInsightsMap.get(insight.type).add(insight);
+				mapTotalInsightNum ++;
+				maxInsightNum = Math.max(maxInsightNum, topInsightsMap.get(insight.type).size());
 			}
 		}
 		List <Insight> topList = new ArrayList <>();
+		// insight type less than 3 or 60% has same insight type
+		if (topInsightsMap.isEmpty() || topInsightsMap.size() <= 3 || maxInsightNum / mapTotalInsightNum > 0.6) {
+			return topList;
+		}
 		while (true) {
 			List <Insight> tmpList = new ArrayList <>();
+			HashSet<String> xyAxisSet = new HashSet<>();
 			for (Entry <InsightType, List <Insight>> entry : topInsightsMap.entrySet()) {
 				if (!entry.getValue().isEmpty()) {
-					tmpList.add(entry.getValue().get(0));
-					entry.getValue().remove(0);
+					for (int i = 0; i < entry.getValue().size(); i++) {
+						Insight insight = entry.getValue().get(i);
+						String xAxis = insight.layout.xAxis;
+						String yAxis = insight.layout.yAxis;
+						if (xAxis == null) {
+							xAxis = "";
+						}
+						if (yAxis == null) {
+							yAxis = "";
+						}
+						String xy = xAxis + yAxis;
+						if (xy.length() == 0) {
+							continue;
+						}
+						String yx = yAxis + xAxis;
+						// if only 1 insight, just add
+						if (xyAxisSet.contains(xy) || xyAxisSet.contains(yx) && entry.getValue().size() > 1) {
+							// last one, add first one
+							if (i == entry.getValue().size() - 1) {
+								tmpList.add(entry.getValue().get(0));
+								entry.getValue().remove(0);
+								break;
+							}
+							continue;
+						}
+						tmpList.add(insight);
+						entry.getValue().remove(i);
+						xyAxisSet.add(xy);
+						xyAxisSet.add(yx);
+						break;
+					}
 				}
 			}
 			if (tmpList.isEmpty()) {
@@ -267,27 +306,20 @@ public class InsightDecay {
 				return -Double.compare(o1.score, o2.score);
 			}
 		});
-		List <Insight> topList = InsightDecay.sortTopInsights(insights, 1.01, 0.8);
-		List <Insight> middleList = InsightDecay.sortTopInsights(insights, 0.8, lowScore);
-		List <Insight> lowerList = new ArrayList <>();
-		InsightDecay decay = new InsightDecay();
-		for (Insight insight : insights) {
-			if (insight.score < lowScore) {
-				double decayWeight = decay.getInsightDecay(insight);
-				insight.originScore = insight.score;
-				insight.score *= decayWeight;
-				lowerList.add(insight);
+		double[] thresholds = new double[]{1.0, 0.8, 0.5, 0.1, 0};
+		double highScore = thresholds[0];
+		List <Insight> sortResult = new ArrayList <>();
+		for (int i = 1; i < thresholds.length; i++) {
+			List <Insight> tmpList = InsightDecay.sortTopInsights(insights, highScore, thresholds[i]);
+			if (tmpList.size() > 0) {
+				sortResult.addAll(tmpList);
+				highScore = thresholds[i];
 			}
 		}
-		lowerList.sort(new Comparator <Insight>() {
-			@Override
-			public int compare(Insight o1, Insight o2) {
-				return -Double.compare(o1.score, o2.score);
-			}
-		});
-		topList.addAll(middleList);
-		topList.addAll(lowerList);
-		return topList;
+		if (sortResult.size() == 0) {
+			return insights;
+		}
+		return sortResult;
 	}
 
 	public static List <Insight> sortInsights(List <Insight> insights) {

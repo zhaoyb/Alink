@@ -272,7 +272,7 @@ public class AutoDiscovery {
 		}
 	}
 
-	static void findInSingleSubspace(LocalOperator <?> data,
+	public static void findInSingleSubspace(LocalOperator <?> data,
 									 List <Subspace> subspaces,
 									 double impact,
 									 final long stopTime,

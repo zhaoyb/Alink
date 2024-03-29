@@ -22,7 +22,7 @@ public class LinearRegModelInfoBatchOp
 	}
 
 	@Override
-	protected LinearRegressorModelInfo createModelInfo(List <Row> rows) {
+	public LinearRegressorModelInfo createModelInfo(List <Row> rows) {
 		return new LinearRegressorModelInfo(rows);
 	}
 

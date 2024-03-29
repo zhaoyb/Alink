@@ -22,7 +22,7 @@ public class VectorStandardScalerModelInfoBatchOp
 	}
 
 	@Override
-	protected VectorStandardScalerModelInfo createModelInfo(List <Row> rows) {
+	public VectorStandardScalerModelInfo createModelInfo(List <Row> rows) {
 		return new VectorStandardScalerModelInfo(rows);
 	}
 }

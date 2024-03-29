@@ -101,7 +101,7 @@ public final class Export2FileSinkStreamOp extends BaseSinkStreamOp <Export2File
 
 		StringBuilder cols = new StringBuilder(names[0]);
 		for (int i = 1; i < names.length; i++) {
-			cols.append(",").append(names[i]);
+			cols.append(",").append("`").append(names[i]).append("`");
 		}
 
 		final String windowStartCol = "window_start";

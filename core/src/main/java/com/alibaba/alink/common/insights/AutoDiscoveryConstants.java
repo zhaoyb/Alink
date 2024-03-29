@@ -8,4 +8,6 @@ public class AutoDiscoveryConstants {
 	public static int BREAKDOWN_DISTINCT_COUNT_THRESHOLD = 100;
 
 	public static double crossMeasureThreadRatio = 0.1;
+
+	public static int MAX_STRING_LEN = 1000;
 }

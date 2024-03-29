@@ -22,7 +22,7 @@ public class MinMaxScalerModelInfoBatchOp
 	}
 
 	@Override
-	protected MinMaxScalerModelInfo createModelInfo(List <Row> rows) {
+	public MinMaxScalerModelInfo createModelInfo(List <Row> rows) {
 		return new MinMaxScalerModelInfo(rows);
 	}
 }

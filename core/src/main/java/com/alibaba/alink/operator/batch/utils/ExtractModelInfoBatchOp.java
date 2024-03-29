@@ -44,7 +44,7 @@ public abstract class ExtractModelInfoBatchOp<S, T extends ExtractModelInfoBatch
 		return (T) this;
 	}
 
-	protected abstract S createModelInfo(List <Row> rows);
+	public abstract S createModelInfo(List <Row> rows);
 
 	protected BatchOperator <?> processModel() {
 		return this;

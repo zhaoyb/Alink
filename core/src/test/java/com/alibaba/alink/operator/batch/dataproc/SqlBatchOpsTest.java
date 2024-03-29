@@ -116,6 +116,7 @@ public class SqlBatchOpsTest extends AlinkTestBase {
 		AsBatchOp op = new AsBatchOp()
 			.setClause("a");
 		inOp.link(op).collect();
+		op.print();
 	}
 
 	@Test

@@ -41,6 +41,10 @@ public class RecommMapper extends ModelMapper {
 		this.ioSchema = recommPrepareIoSchema(params, recommType);
 		checkIoSchema();
 		initializeSliced();
+
+		if (null != ioSchema) {
+			outputFieldSize = getOutputSchema().getFieldNames().length;
+		}
 	}
 
 	public RecommMapper(TableSchema modelSchema, TableSchema dataSchema, Params params,
@@ -51,6 +55,10 @@ public class RecommMapper extends ModelMapper {
 		this.ioSchema = recommPrepareIoSchema(params, recommKernel.recommType);
 		checkIoSchema();
 		initializeSliced();
+
+		if (null != ioSchema) {
+			outputFieldSize = getOutputSchema().getFieldNames().length;
+		}
 	}
 
 	@Override

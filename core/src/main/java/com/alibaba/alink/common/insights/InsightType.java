@@ -16,5 +16,6 @@ public enum InsightType implements Serializable {
 	Correlation,
 	CrossMeasureCorrelation,
 	BasicStat,
-	Distribution
+	Distribution,
+	Other
 }

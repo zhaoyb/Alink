@@ -384,12 +384,13 @@ public class SmoSolver {
 				}
 			}
 		}
-		if (gmax + gmax2 < epsilon) {
+		if (gmax + gmax2 < epsilon && gminIdx != -1) {
+			workingSet[0] = gmaxIdx;
+			workingSet[1] = gminIdx;
+			return 0;
+		} else {
 			return 1;
 		}
-		workingSet[0] = gmaxIdx;
-		workingSet[1] = gminIdx;
-		return 0;
 	}
 
 	private boolean beShrunk(int i, double gmax1, double gmax2) {

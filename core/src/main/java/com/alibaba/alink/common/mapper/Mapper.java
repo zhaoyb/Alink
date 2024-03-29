@@ -51,6 +51,8 @@ public abstract class Mapper implements Serializable {
 	private SlicedSelectedSampleArrayThreadLocal selections;
 	private SlicedSlicedResultArrayThreadLocal results;
 
+	protected int outputFieldSize = -1;
+
 	public Mapper(TableSchema dataSchema, Params params) {
 		this.dataFieldNames = dataSchema.getFieldNames();
 		this.dataFieldTypes = dataSchema.getFieldDataTypes();
@@ -61,6 +63,16 @@ public abstract class Mapper implements Serializable {
 		checkIoSchema();
 
 		initializeSliced();
+
+		/*****
+		 * Mapper的派生类ModelMapper中 prepareIoSchema(dataSchema, params)返回为空，
+		 * 使用 prepareIoSchema(modelSchema, dataSchema, params) 获取 ioSchema
+		 * 所以，在本处需要判断ioSchema不为null，再赋值；
+		 * 另外，在ModelMapper的构造函数中，也需要单独给 outputFieldSize 赋值
+		 */
+		if (null != ioSchema) {
+			outputFieldSize = getOutputSchema().getFieldNames().length;
+		}
 	}
 
 	public void open() {
@@ -77,7 +89,7 @@ public abstract class Mapper implements Serializable {
 	 * @throws Exception This method may throw exceptions. Throwing an exception will cause the operation to fail.
 	 */
 	public Row map(Row row) throws Exception {
-		Row output = new Row(getOutputSchema().getFieldNames().length);
+		Row output = new Row(outputFieldSize);
 
 		transformer.transform(row, output);
 
@@ -95,7 +107,7 @@ public abstract class Mapper implements Serializable {
 	public Row[] bunchMap(Row[] rows) throws Exception {
 		Row[] outs = new Row[rows.length];
 		for (int i = 0; i < rows.length; i++) {
-			outs[i] = new Row(getOutputSchema().getFieldNames().length);
+			outs[i] = new Row(outputFieldSize);
 		}
 		map(rows, outs, rows.length);
 		return outs;
@@ -105,12 +117,12 @@ public abstract class Mapper implements Serializable {
 		if (outs == null) {
 			outs = new Row[len];
 			for (int i = 0; i < len; i++) {
-				outs[i] = new Row(getOutputSchema().getFieldNames().length);
+				outs[i] = new Row(outputFieldSize);
 			}
 		}
 		if (outs[0] == null) {
 			for (int i = 0; i < len; i++) {
-				outs[i] = new Row(getOutputSchema().getFieldNames().length);
+				outs[i] = new Row(outputFieldSize);
 			}
 		}
 

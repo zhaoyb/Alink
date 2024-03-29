@@ -36,7 +36,7 @@ public class AlsModelInfoBatchOp extends ExtractModelInfoBatchOp <AlsModelInfo, 
 	}
 
 	@Override
-	protected AlsModelInfo createModelInfo(List <Row> rows) {
+	public AlsModelInfo createModelInfo(List <Row> rows) {
 		int userNum = 0;
 		int itemNum = 0;
 		int totalSamples = 0;

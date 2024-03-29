@@ -20,7 +20,7 @@ public class LdaModelInfoBatchOp extends ExtractModelInfoBatchOp <LdaModelInfo, 
 	}
 
 	@Override
-	protected LdaModelInfo createModelInfo(List <Row> rows) {
+	public LdaModelInfo createModelInfo(List <Row> rows) {
 		return new LdaModelInfo(rows);
 	}
 }

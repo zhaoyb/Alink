@@ -2,11 +2,11 @@ package com.alibaba.alink.common.insights;
 
 import com.alibaba.alink.operator.local.LocalOperator;
 import com.alibaba.alink.operator.local.source.CsvSourceLocalOp;
-import com.alibaba.alink.operator.local.sql.GroupByLocalOp2;
+import com.alibaba.alink.operator.local.sql.FilterLocalOp;
+import com.alibaba.alink.operator.local.sql.GroupByLocalOp;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Comparator;
 import java.util.List;
 
 public class AutoDiscoveryTest {
@@ -162,7 +162,7 @@ public class AutoDiscoveryTest {
 
 		String groupClause = "cf01";
 
-		LocalOperator <?> groupOp = new GroupByLocalOp2()
+		LocalOperator <?> groupOp = new GroupByLocalOp()
 			.setGroupByPredicate(groupClause)
 			.setSelectClause(selectClause);
 
@@ -204,6 +204,19 @@ public class AutoDiscoveryTest {
 
 		LocalOperator.execute();
 	}
+
+	@Ignore
+	@Test
+	public void testFilter() {
+		LocalOperator<?> data = Data.getCarSalesLocalSource()
+			.select("to_timestamp_from_format(`year`, 'YYYY/MM/DD') as ts, brand, category, model, sales");
+		FilterLocalOp filterLocalOp = new FilterLocalOp()
+			.setClause("`ts`=2008-12-28 00:00:00.0");
+
+		data.link(filterLocalOp).print();
+
+	}
+
 
 	@Test
 	@Ignore

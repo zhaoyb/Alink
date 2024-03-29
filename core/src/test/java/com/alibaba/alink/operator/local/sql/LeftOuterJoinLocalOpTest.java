@@ -8,13 +8,17 @@ import org.junit.Test;
 public class LeftOuterJoinLocalOpTest {
 	@Test
 	public void testLeftOuterJoinLocalOp() {
-		String URL = "https://alink-test-data.oss-cn-hangzhou.aliyuncs.com/iris.csv";
-		String SCHEMA_STR
-			= "sepal_length double, sepal_width double, petal_length double, petal_width double, category string";
-		LocalOperator <?> data1 = new TableSourceLocalOp(
-			new CsvSourceBatchOp().setFilePath(URL).setSchemaStr(SCHEMA_STR).collectMTable());
-		LocalOperator <?> data2 = new TableSourceLocalOp(
-			new CsvSourceBatchOp().setFilePath(URL).setSchemaStr(SCHEMA_STR).collectMTable());
+		//String URL = "https://alink-test-data.oss-cn-hangzhou.aliyuncs.com/iris.csv";
+		//String SCHEMA_STR
+		//	= "sepal_length double, sepal_width double, petal_length double, petal_width double, category string";
+		//LocalOperator <?> data1 = new TableSourceLocalOp(
+		//	new CsvSourceBatchOp().setFilePath(URL).setSchemaStr(SCHEMA_STR).collectMTable());
+		//LocalOperator <?> data2 = new TableSourceLocalOp(
+		//	new CsvSourceBatchOp().setFilePath(URL).setSchemaStr(SCHEMA_STR).collectMTable());
+
+		LocalOperator <?> data1 = IrisData.getLocalSourceOp();
+		LocalOperator <?> data2 = IrisData.getLocalSourceOp();
+
 		LocalOperator <?> joinOp =
 			new LeftOuterJoinLocalOp().setJoinPredicate("a.category=b.category").setSelectClause(
 				"a.petal_length");

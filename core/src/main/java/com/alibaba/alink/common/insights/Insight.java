@@ -8,6 +8,8 @@ import java.util.List;
 
 public class Insight implements Serializable {
 
+	public long id;
+
 	public Subject subject;
 	public InsightType type;
 	public double score;
@@ -55,7 +57,7 @@ public class Insight implements Serializable {
 				stringBuilder.append("\n|-title: ").append(layout.title);
 			}
 			if (layout.focus != null) {
-				stringBuilder.append("\n|-focus: ").append(layout.focus);
+				stringBuilder.append("\n|-focus: ").append(JsonConverter.toJson(layout.focus));
 			}
 			if (layout.xAxis != null) {
 				stringBuilder.append("\n|-xAxis: ").append(layout.xAxis);
@@ -125,4 +127,6 @@ public class Insight implements Serializable {
 		}
 		return title;
 	}
+
+
 }

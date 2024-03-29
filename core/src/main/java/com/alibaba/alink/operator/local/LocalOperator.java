@@ -1,7 +1,6 @@
 package com.alibaba.alink.operator.local;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.ml.api.misc.param.ParamInfo;
 import org.apache.flink.ml.api.misc.param.Params;
 import org.apache.flink.ml.api.misc.param.WithParams;
@@ -28,10 +27,12 @@ import com.alibaba.alink.operator.local.lazy.LocalLazyObjectsManager;
 import com.alibaba.alink.operator.local.source.BaseSourceLocalOp;
 import com.alibaba.alink.operator.local.source.MemSourceLocalOp;
 import com.alibaba.alink.operator.local.source.TableSourceLocalOp;
+import com.alibaba.alink.operator.local.sql.AsLocalOp;
 import com.alibaba.alink.operator.local.sql.DistinctLocalOp;
 import com.alibaba.alink.operator.local.sql.FilterLocalOp;
 import com.alibaba.alink.operator.local.sql.GroupByLocalOp;
-import com.alibaba.alink.operator.local.sql.GroupByLocalOp2;
+import com.alibaba.alink.operator.local.sql.OrderByLocalOp;
+import com.alibaba.alink.operator.local.sql.SelectLocalOp;
 import com.alibaba.alink.operator.local.statistics.InternalFullStatsLocalOp;
 import com.alibaba.alink.operator.local.statistics.SummarizerLocalOp;
 import com.alibaba.alink.operator.local.utils.LocalCheckpointManagerInterface;
@@ -62,8 +63,8 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 
 	/**
 	 * NOTE:
-	 *  If use localCheckpointManager and checkpointName,
-	 *  the data will not be saved to above private member: output and sideOutputs
+	 * If use localCheckpointManager and checkpointName,
+	 * the data will not be saved to above private member: output and sideOutputs
 	 */
 	private LocalCheckpointManagerInterface localCheckpointManager = null;
 
@@ -379,7 +380,9 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 			try {
 				linkFromImpl(inputs);
 			} catch (Exception ex) {
-				this.localCheckpointManager.removeUnfinishedNodeDir(this.checkpointName);
+				if (null != this.localCheckpointManager) {
+					this.localCheckpointManager.removeUnfinishedNodeDir(this.checkpointName);
+				}
 				throw ex;
 			}
 			markCheckpointSaved();
@@ -438,15 +441,7 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	}
 
 	public LocalOperator <?> select(String fields) {
-		try {
-			return LocalMLEnvironment.getInstance().getSqlExecutor().select(this, fields);
-		} catch (Exception ex) {
-			String newSelectSql = fields;
-			if (fields.contains("*")) {
-				newSelectSql = newSelectSql.replace("*", String.join(",", getColNames()));
-			}
-			return LocalMLEnvironment.getInstance().getSqlExecutor().select(this, newSelectSql);
-		}
+		return this.link(new SelectLocalOp().setClause(fields));
 	}
 
 	public LocalOperator <?> select(String[] fields) {
@@ -454,22 +449,15 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	}
 
 	public LocalOperator <?> as(String fields) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor().as(this, fields);
+		return new AsLocalOp(fields).linkFrom(this);
 	}
 
 	public LocalOperator <?> as(String[] fields) {
-		StringBuilder sbd = new StringBuilder();
-		for (int i = 0; i < fields.length; i++) {
-			if (i > 0) {
-				sbd.append(",");
-			}
-			sbd.append(fields[i]);
-		}
-		return as(sbd.toString());
+		return as(String.join(",", fields));
 	}
 
 	public LocalOperator <?> where(String predicate) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor().where(this, predicate);
+		return filter(predicate);
 	}
 
 	public LocalOperator <?> filter(String predicate) {
@@ -485,89 +473,62 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 		return new DistinctLocalOp().linkFrom(this);
 	}
 
-	public LocalOperator <?> orderBy(String fieldName, int limit, boolean isAscending) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor()
-			.orderBy(this, fieldName, isAscending, limit);
+	public LocalOperator <?> orderBy(String orderClause, int limit, boolean isAscending) {
+		return new OrderByLocalOp()
+			.setLimit(limit)
+			.setClause(orderClause)
+			.setOrder(isAscending ? "asc" : "desc")
+			.linkFrom(this);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a specific range of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
-	 * @param offset    The starting position of records to keep.
-	 * @param fetch     The  number of records to keep.
+	 * @param orderClause The name of the field by which the records are ordered.
+	 * @param offset      The starting position of records to keep.
+	 * @param fetch       The  number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public LocalOperator <?> orderBy(String fieldName, int offset, int fetch) {
-		return orderBy(fieldName, offset, fetch, true);
+	public LocalOperator <?> orderBy(String orderClause, int offset, int fetch) {
+		return orderBy(orderClause, offset, fetch, true);
 	}
 
-	public LocalOperator <?> orderBy(String fieldName, int offset, int fetch, boolean isAscending) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor()
-			.orderBy(this, fieldName, isAscending, offset, fetch);
+	public LocalOperator <?> orderBy(String orderClause, int offset, int fetch, boolean isAscending) {
+		return new OrderByLocalOp()
+			.setOffset(offset)
+			.setFetch(fetch)
+			.setClause(orderClause)
+			.setOrder(isAscending ? "asc" : "desc")
+			.linkFrom(this);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a limited number of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
-	 * @param limit     The maximum number of records to keep.
+	 * @param orderClause The name of the field by which the records are ordered.
+	 * @param limit       The maximum number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public LocalOperator <?> orderBy(String fieldName, int limit) {
-		return orderBy(fieldName, limit, true);
+	public LocalOperator <?> orderBy(String orderClause, int limit) {
+		return orderBy(orderClause, limit, true);
 	}
 
 	public LocalOperator <?> groupBy(String[] groupCols, String selectClause) {
-		try {
-			String[] newGroupCols = groupCols.clone();
-			for (int i = 0; i < newGroupCols.length; i++) {
-				if (!newGroupCols[i].contains("`")) {
-					newGroupCols[i] = "`" + newGroupCols[i] + "`";
-				}
+		String[] newGroupCols = groupCols.clone();
+		for (int i = 0; i < newGroupCols.length; i++) {
+			if (!newGroupCols[i].contains("`")) {
+				newGroupCols[i] = "`" + newGroupCols[i].trim() + "`";
 			}
-			return new GroupByLocalOp(String.join(",", newGroupCols), selectClause).
-				linkFrom(this);
-		} catch (Exception ex) {
-			String prefix = "__ak_ts__";
-			String[] newGroupCols = groupCols.clone();
-			String newSelectClause = selectClause;
-
-			//String[] newColNames = colNames;
-			for (int i = 0; i < groupCols.length; i++) {
-				String name = groupCols[i];
-				if (Types.SQL_TIMESTAMP == getSchema().getFieldType(name).get()) {
-					String nameTs = name + prefix;
-					newGroupCols[i] = nameTs;
-					newSelectClause = newSelectClause.replace(name, nameTs);
-				}
-			}
-
-			System.out.println("newGroupCols: " + String.join(",", newGroupCols));
-			System.out.println("newSelectClause: " + newSelectClause);
-
-			for (int i = 0; i < newGroupCols.length; i++) {
-				if (!newGroupCols[i].contains("`")) {
-					newGroupCols[i] = "`" + newGroupCols[i] + "`";
-				}
-			}
-
-			LocalOperator <?> outOp = new GroupByLocalOp(String.join(",", newGroupCols), newSelectClause).
-				linkFrom(this);
-
-			String[] outColNames = outOp.getColNames();
-			for (int i = 0; i < outColNames.length; i++) {
-				if (outColNames[i].endsWith(prefix)) {
-					outColNames[i] = outColNames[i].split(prefix)[0];
-				}
-			}
-			return new MemSourceLocalOp(outOp.getOutputTable().getRows(),
-				new TableSchema(outColNames, outOp.getColTypes()));
 		}
+		return groupBy(String.join(",", newGroupCols), selectClause);
 	}
 
 	public LocalOperator <?> groupBy(String groupByPredicate, String selectClause) {
-		return new GroupByLocalOp2(groupByPredicate, selectClause).linkFrom(this);
+		return new GroupByLocalOp(groupByPredicate, selectClause).linkFrom(this);
+	}
+
+	public LocalOperator <?> groupBy(String selectClause) {
+		return groupBy("1", selectClause).linkFrom(this);
 	}
 
 	protected static LocalOperator <?> checkAndGetFirst(LocalOperator <?>... inputs) {

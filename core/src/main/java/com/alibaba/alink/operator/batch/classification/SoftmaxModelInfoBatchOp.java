@@ -22,7 +22,7 @@ public class SoftmaxModelInfoBatchOp
 	}
 
 	@Override
-	protected SoftmaxModelInfo createModelInfo(List <Row> rows) {
+	public SoftmaxModelInfo createModelInfo(List <Row> rows) {
 		return new SoftmaxModelInfo(rows);
 	}
 

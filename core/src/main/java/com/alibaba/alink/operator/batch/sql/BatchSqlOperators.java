@@ -7,6 +7,7 @@ import com.alibaba.alink.common.MLEnvironmentFactory;
 import com.alibaba.alink.common.utils.TableUtil;
 import com.alibaba.alink.operator.AlgoOperator;
 import com.alibaba.alink.operator.batch.BatchOperator;
+import com.alibaba.alink.operator.common.sql.OrderUtils;
 
 /**
  * Apply sql operators(select, where, groupby, join, etc.) on {@link BatchOperator}s.
@@ -95,41 +96,42 @@ public class BatchSqlOperators {
 	/**
 	 * Order the records by a specific field and keeping a limited number of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
+	 * @param orderClause The name of the field by which the records are ordered.
 	 * @param limit     The maximum number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public static BatchOperator orderBy(BatchOperator batchOp, String fieldName, boolean isAscending, int limit) {
-		return orderByImpl(batchOp, fieldName, isAscending, limit, -1, -1);
+	public static BatchOperator orderBy(BatchOperator batchOp, String orderClause, boolean isAscending, int limit) {
+		return orderByImpl(batchOp, orderClause, isAscending, limit, -1, -1);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a specific range of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
+	 * @param orderClause The name of the field by which the records are ordered.
 	 * @param offset    The starting position of records to keep.
 	 * @param fetch     The  number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public static BatchOperator orderBy(BatchOperator batchOp, String fieldName, boolean isAscending, int offset,
+	public static BatchOperator orderBy(BatchOperator batchOp, String orderClause, boolean isAscending, int offset,
 										int fetch) {
-		return orderByImpl(batchOp, fieldName, isAscending, -1, offset, fetch);
+		return orderByImpl(batchOp, orderClause, isAscending, -1, offset, fetch);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a specific range of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
+	 * @param orderClause The name of the field by which the records are ordered.
 	 * @param offset    The starting position of records to keep.
 	 * @param fetch     The  number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	private static BatchOperator orderByImpl(BatchOperator batchOp, String fieldName, boolean isAscending, int limit,
+	private static BatchOperator orderByImpl(BatchOperator batchOp, String orderClause, boolean isAscending, int limit,
 											 int offset, int fetch) {
+		String formatOrderClause = OrderUtils.getColsAndOrdersStr(orderClause, batchOp.getSchema(), isAscending);
+		System.out.println("formatOrderClause: " + formatOrderClause);
 		String tmpTableName = registerTempTable(batchOp);
 		StringBuilder s = new StringBuilder();
-		s.append("SELECT * FROM ").append(tmpTableName).append(" ORDER BY ").append(fieldName).append(" ")
-			.append(isAscending ? "ASC" : "DESC");
+		s.append("SELECT * FROM ").append(tmpTableName).append(" ORDER BY ").append(formatOrderClause);
 		if (limit >= 0) {
 			s.append(" LIMIT ").append(limit);
 		}

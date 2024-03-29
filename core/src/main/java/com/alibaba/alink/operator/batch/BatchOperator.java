@@ -249,35 +249,35 @@ public abstract class BatchOperator<T extends BatchOperator <T>> extends AlgoOpe
 		return BatchSqlOperators.distinct(this);
 	}
 
-	public BatchOperator <?> orderBy(String fieldName, int limit, boolean isAscending) {
-		return BatchSqlOperators.orderBy(this, fieldName, isAscending, limit);
+	public BatchOperator <?> orderBy(String orderClause, int limit, boolean isAscending) {
+		return BatchSqlOperators.orderBy(this, orderClause, isAscending, limit);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a specific range of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
+	 * @param orderClause The name of the field by which the records are ordered.
 	 * @param offset    The starting position of records to keep.
 	 * @param fetch     The  number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public BatchOperator <?> orderBy(String fieldName, int offset, int fetch) {
-		return orderBy(fieldName, offset, fetch, true);
+	public BatchOperator <?> orderBy(String orderClause, int offset, int fetch) {
+		return orderBy(orderClause, offset, fetch, true);
 	}
 
-	public BatchOperator <?> orderBy(String fieldName, int offset, int fetch, boolean isAscending) {
-		return BatchSqlOperators.orderBy(this, fieldName, isAscending, offset, fetch);
+	public BatchOperator <?> orderBy(String orderClause, int offset, int fetch, boolean isAscending) {
+		return BatchSqlOperators.orderBy(this, orderClause, isAscending, offset, fetch);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a limited number of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
+	 * @param orderClause The name of the field by which the records are ordered.
 	 * @param limit     The maximum number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public BatchOperator <?> orderBy(String fieldName, int limit) {
-		return orderBy(fieldName, limit, true);
+	public BatchOperator <?> orderBy(String orderClause, int limit) {
+		return orderBy(orderClause, limit, true);
 	}
 
 	/**

@@ -357,6 +357,7 @@ public class FeatureClauseUtil {
 	public static String getMTableSchema(String clause, TableSchema tableSchema) {
 		String[] colNames = clause.split("\\(")[1].split("\\)")[0].split(",");
 		Arrays.setAll(colNames, i -> colNames[i].trim());
+		Arrays.setAll(colNames, i -> colNames[i].replace("`", ""));
 		TypeInformation[] newTypes = TableUtil.findColTypes(tableSchema, colNames);
 		return TableUtil.schema2SchemaStr(new TableSchema(colNames, newTypes));
 	}

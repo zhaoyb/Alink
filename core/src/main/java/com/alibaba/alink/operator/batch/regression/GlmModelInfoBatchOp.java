@@ -22,7 +22,7 @@ public class GlmModelInfoBatchOp
 	}
 
 	@Override
-	protected GlmModelInfo createModelInfo(List <Row> rows) {
+	public GlmModelInfo createModelInfo(List <Row> rows) {
 		return new GlmModelInfo(rows);
 	}
 

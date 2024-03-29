@@ -23,7 +23,7 @@ public class ImputerModelInfoBatchOp
 	}
 
 	@Override
-	protected ImputerModelInfo createModelInfo(List<Row> rows) {
+	public ImputerModelInfo createModelInfo(List<Row> rows) {
 		ImputerModelInfo imputerModelInfo =  new ImputerModelInfo(rows);
 		imputerModelInfo.selectedCols = this.getParams().get(ImputerTrainParams.SELECTED_COLS);
 		return imputerModelInfo;

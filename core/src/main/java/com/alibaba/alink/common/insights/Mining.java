@@ -8,6 +8,7 @@ import com.alibaba.alink.common.MTable;
 import com.alibaba.alink.common.exceptions.AkIllegalOperatorParameterException;
 import com.alibaba.alink.common.exceptions.AkIllegalStateException;
 import com.alibaba.alink.common.probabilistic.CDF;
+import com.alibaba.alink.common.utils.JsonConverter;
 import com.alibaba.alink.operator.common.regression.LinearReg;
 import com.alibaba.alink.operator.common.regression.LinearRegressionModel;
 import com.alibaba.alink.operator.common.statistics.basicstatistic.TableSummary;
@@ -157,11 +158,13 @@ public class Mining {
 		Subspace subspace = subject.subspaces.isEmpty() ? null : subject.subspaces.get(0);
 
 		LayoutData layoutData = new LayoutData();
-		layoutData.data = dataAggr.getOutputTable();
+		MTable outMT = dataAggr.getOutputTable();
+		outMT.orderBy(new int[] {1}, new boolean[] {false});
+		layoutData.data = outMT;
 		layoutData.title = insight.getTitle();
 		layoutData.description = (subspace == null ? "" : subspace.strInDescription()) +
 			String.format("%s里%s的值明显高于其余的值.", subject.breakdown.colName, maxValueKey);
-		layoutData.focus = String.format("%s", maxValueKey);
+		layoutData.focus = new String[] {String.format("%s", maxValueKey)};
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
 		layoutData.yAxis = String.format("%s(%s)", measure.aggr, measure.colName);
 
@@ -221,11 +224,13 @@ public class Mining {
 		Subspace subspace = subject.subspaces.isEmpty() ? null : subject.subspaces.get(0);
 
 		LayoutData layoutData = new LayoutData();
-		layoutData.data = dataAggr.getOutputTable();
+		MTable outMT = dataAggr.getOutputTable();
+		outMT.orderBy(new int[] {1}, new boolean[] {false});
+		layoutData.data = outMT;
 		layoutData.title = insight.getTitle();
 		layoutData.description = (subspace == null ? "" : subspace.strInDescription()) +
 			String.format("%s里最大负值%s明显低于其余的值.", subject.breakdown.colName, minValueKey);
-		layoutData.focus = String.format("%s", minValueKey);
+		layoutData.focus = new String[] {String.format("%s", minValueKey)};
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
 		layoutData.yAxis = String.format("%s(%s)", measure.aggr, measure.colName);
 
@@ -299,11 +304,13 @@ public class Mining {
 		Subspace subspace = subject.subspaces.isEmpty() ? null : subject.subspaces.get(0);
 
 		LayoutData layoutData = new LayoutData();
-		layoutData.data = dataAggr.getOutputTable();
+		MTable outMT = dataAggr.getOutputTable();
+		outMT.orderBy(new int[] {1}, new boolean[] {false});
+		layoutData.data = outMT;
 		layoutData.title = insight.getTitle();
 		layoutData.description = (subspace == null ? "" : subspace.strInDescription()) +
 			String.format("%s里%s和%s的值明显高于其余的值.", subject.breakdown.colName, firstMaxValue, secondMaxValue);
-		layoutData.focus = String.format("%s %s", firstMaxValue, secondMaxValue);
+		layoutData.focus = new String[] {firstMaxValue, secondMaxValue};
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
 		layoutData.yAxis = String.format("%s(%s)", measure.aggr, measure.colName);
 
@@ -324,19 +331,28 @@ public class Mining {
 
 		if (subject.measures.size() != 1 ||
 			summary.count() < 5 ||
-			summary.count() > 20) {
+			summary.count() > 100) {
 			return insight;
 		}
 
 		double mean = summary.mean(measureCol);
 
 		if (summary.min(measureCol) == summary.max(measureCol)) {
-			insight.score = 0.8;
+			insight.score = 0.6;
 		} else {
 			List <Double> values = loadData(dataAggr.collect(), 1);
-
-			// construct description.
-			insight.score = chiSquare(values, mean);
+			int zeroNum = 0;
+			for (Double val : values) {
+				if (val == 0) {
+					zeroNum++;
+				}
+			}
+			if ((double) zeroNum / summary.count() > 0.6) {
+				insight.score = 0;
+			} else {
+				// construct description.
+				insight.score = chiSquare(values, mean) * 0.99;
+			}
 		}
 
 		Measure measure = insight.subject.measures.get(0);
@@ -395,12 +411,14 @@ public class Mining {
 		Subspace subspace = subject.subspaces.isEmpty() ? null : subject.subspaces.get(0);
 
 		LayoutData layoutData = new LayoutData();
-		layoutData.data = dataAggr.getOutputTable();
+		MTable outMT = dataAggr.getOutputTable();
+		outMT.orderBy(new int[] {1}, new boolean[] {false});
+		layoutData.data = outMT;
 		layoutData.title = insight.getTitle();
 		layoutData.description = (subspace == null ? "" : subspace.strInDescription()) +
 			String.format("%s里%s占比超过一半.", subject.breakdown.colName, maxValueKey);
 
-		layoutData.focus = maxValueKey;
+		layoutData.focus = new String[] {maxValueKey};
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
 		layoutData.yAxis = String.format("%s(%s)", measure.aggr, measure.colName);
 
@@ -428,6 +446,9 @@ public class Mining {
 		List <Double> values = loadData(mt.getRows(), 1);
 
 		Double[] vals = values.toArray(new Double[0]);
+
+		System.out.println(JsonConverter.toJson(vals));
+
 		Integer[] changePointIndices = null;
 		if (vals.length >= 20) {
 			changePointIndices = findAllChangePointId(vals);
@@ -485,7 +506,8 @@ public class Mining {
 		} else {
 			layoutData.description = String.format("时间序列有%s个变点，分别是: %s.",
 				changePointIndices.length, sbd.substring(1));
-			layoutData.focus = sbd.substring(1);
+			//layoutData.focus = sbd.substring(1);
+			layoutData.focus = changePointTimeString;
 		}
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
 		layoutData.yAxis = String.format("%s(%s)", measure.aggr, measure.colName);
@@ -568,7 +590,8 @@ public class Mining {
 		} else {
 			layoutData.description = String.format("时间序列有%s个异常点，分别是: %s.",
 				outlierTimeString.size(), sbd.substring(1));
-			layoutData.focus = sbd.substring(1);
+			//layoutData.focus = sbd.substring(1);
+			layoutData.focus = outlierTimeString.toArray(new String[0]);
 		}
 
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
@@ -629,7 +652,7 @@ public class Mining {
 		layoutData.focus = null;
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
 		layoutData.yAxis = String.format("%s(%s)", measure.aggr, measure.colName);
-		layoutData.lineA = String.format("[%s, %s]", slope, lrModel.beta[0]);
+		layoutData.lineA = String.format("%s,%s", slope, lrModel.beta[0]);
 
 		insight.layout = layoutData;
 
@@ -646,6 +669,7 @@ public class Mining {
 	 */
 
 	private static Insight seasonality(LocalOperator <?> dataAggr, Subject subject) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Insight insight = new Insight();
 		insight.subject = subject;
 		insight.type = InsightType.Seasonality;
@@ -697,8 +721,14 @@ public class Mining {
 		Timestamp t1 = (Timestamp) mt.getEntry(0, 0);
 		Timestamp t2 = (Timestamp) mt.getEntry(acfMaxIdx, 0);
 
-		layoutData.description = String.format("时间序列有季节性趋势, 周期是%s.", getPeriodStr(t1, t2));
-		layoutData.focus = null;
+		String period = getPeriodStr(t1, t2);
+
+		layoutData.description = String.format("时间序列有季节性趋势, 周期是%s.", period);
+		int focusSize = mt.getNumRow() / acfMaxIdx;
+		layoutData.focus = new String[focusSize];
+		for (int i = 0; i < focusSize; i++) {
+			layoutData.focus[i] = sdf.format(mt.getEntry(i * acfMaxIdx, 0));
+		}
 		layoutData.xAxis = String.format("%s", subject.breakdown.colName);
 		layoutData.yAxis = String.format("%s(%s)", measure.aggr, measure.colName);
 

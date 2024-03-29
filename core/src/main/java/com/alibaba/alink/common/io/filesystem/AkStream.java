@@ -64,7 +64,7 @@ public class AkStream {
 	public class AkReader implements Iterable <Row>, AutoCloseable {
 		ZipInputStream inputStream;
 
-		AkReader() throws IOException {
+		public AkReader() throws IOException {
 			inputStream = new ZipInputStream(
 				new BufferedInputStream(
 					AkStream.this.filePath.getFileSystem().open(AkStream.this.filePath.getPath())
@@ -72,7 +72,7 @@ public class AkStream {
 			);
 		}
 
-		AkReader(InputStream inputStream) {
+		public AkReader(InputStream inputStream) {
 			this.inputStream = new ZipInputStream(new BufferedInputStream(inputStream));
 		}
 
@@ -137,7 +137,7 @@ public class AkStream {
 	public class AkWriter implements AutoCloseable {
 		ZipOutputStream zipOutputStream;
 
-		AkWriter() throws IOException {
+		public AkWriter() throws IOException {
 			zipOutputStream =
 				new ZipOutputStream(
 					new BufferedOutputStream(
@@ -153,7 +153,7 @@ public class AkStream {
 			writeMeta2Stream(akMeta, zipOutputStream);
 		}
 
-		AkWriter(OutputStream outputStream) throws IOException {
+		public AkWriter(OutputStream outputStream) throws IOException {
 			zipOutputStream = new ZipOutputStream(new BufferedOutputStream(outputStream));
 
 			// should be initial the num files in meta.
@@ -210,15 +210,15 @@ public class AkStream {
 		}
 	}
 
-	AkStream(AkUtils.AkMeta akMeta) {
+	public AkStream(AkUtils.AkMeta akMeta) {
 		this.akMeta = akMeta;
 	}
 
-	AkReader getReader(InputStream inputStream) throws IOException {
+	public AkReader getReader(InputStream inputStream) throws IOException {
 		return new AkReader(inputStream);
 	}
 
-	AkWriter getWriter(OutputStream outputStream) throws IOException {
+	public AkWriter getWriter(OutputStream outputStream) throws IOException {
 		return new AkWriter(outputStream);
 	}
 

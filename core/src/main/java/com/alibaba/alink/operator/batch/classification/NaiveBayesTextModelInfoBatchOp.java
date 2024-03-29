@@ -23,7 +23,7 @@ public class NaiveBayesTextModelInfoBatchOp extends
 	}
 
 	@Override
-	protected NaiveBayesTextModelInfo createModelInfo(List <Row> rows) {
+	public NaiveBayesTextModelInfo createModelInfo(List <Row> rows) {
 		NaiveBayesTextModelData modelData = new NaiveBayesTextModelDataConverter().load(rows);
 		NaiveBayesTextModelInfo modelInfo = new NaiveBayesTextModelInfo(modelData.theta,
 			modelData.pi, modelData.labels, modelData.vectorSize,

@@ -13,13 +13,19 @@ import com.alibaba.alink.operator.local.LocalOperator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class BreakdownDetector {
 
-	List <Tuple2 <Breakdown, List <Measure>>> list = new ArrayList <>();
+	public List <Tuple2 <Breakdown, List <Measure>>> list = new ArrayList <>();
 
 	public BreakdownDetector() {
 	}
@@ -130,7 +136,7 @@ public class BreakdownDetector {
 		TypeInformation <?>[] colTypes = tableSchema.getFieldTypes();
 		List <String> res = new ArrayList <>();
 		for (int i = 0; i < colNames.length; i++) {
-			if (Types.SQL_TIMESTAMP == colTypes[i] || Types.STRING == colTypes[i]) {
+			if (Types.SQL_TIMESTAMP.equals(colTypes[i]) || Types.STRING.equals(colTypes[i])) {
 				res.add(colNames[i]);
 			}
 		}
@@ -147,12 +153,35 @@ public class BreakdownDetector {
 		List <Tuple2 <Breakdown, List <Measure>>> list = new ArrayList <>();
 
 		int breakDownColNum = breakdownColNameList.length;
+		Map <String, Integer> breadDownColsAndCount = new HashMap <>();
 		for (int i = 0; i < breakDownColNum; i++) {
-			String breakdownColName = breakdownColNameList[i];
-			int distinctCount = breakDownColDistinctCount[i];
-			if (distinctCount > distinctCountThreshold ||
-				distinctCount < 2) {
+			breadDownColsAndCount.put(breakdownColNameList[i], breakDownColDistinctCount[i]);
+		}
+
+		List <Map.Entry <String, Integer>> breadDownColsAndCountList =
+			new ArrayList <Map.Entry <String, Integer>>(breadDownColsAndCount.entrySet());
+
+		Collections.sort(breadDownColsAndCountList, new Comparator <Map.Entry <String, Integer>>() {
+			@Override
+			public int compare(Entry <String, Integer> o1, Entry <String, Integer> o2) {
+				return o1.getValue().compareTo(o2.getValue()); // 升序
+			}
+		});
+
+		for (int i = 0; i < breakDownColNum; i++) {
+			Map.Entry <String, Integer> t2 = breadDownColsAndCountList.get(i);
+			String breakdownColName = t2.getKey();
+			int distinctCount = t2.getValue();
+
+			//System.out.println("breakdownColName: " + breakdownColName + " distinctCount: " + distinctCount);
+
+			if (distinctCount < 2) {
 				continue;
+			}
+
+			if ((distinctCount > distinctCountThreshold && distinctCount < distinctCountThreshold * 10)
+				&& list.size() >= 5) {
+				break;
 			}
 
 			List <Measure> measures = new ArrayList <>();
@@ -162,7 +191,9 @@ public class BreakdownDetector {
 				for (String measureColName : measureColNames) {
 					measures.add(new Measure(measureColName, MeasureAggr.SUM));
 				}
-				list.add(Tuple2.of(new Breakdown(breakdownColName), measures));
+				if (!measureColNames.isEmpty()) {
+					list.add(Tuple2.of(new Breakdown(breakdownColName), measures));
+				}
 			} else {
 				measures.add(new Measure(breakdownColName, MeasureAggr.COUNT));
 				for (String measureColName : measureColNames) {

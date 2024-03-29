@@ -2,6 +2,7 @@ package com.alibaba.alink.common.sql.builtin.agg;
 
 import com.alibaba.alink.common.exceptions.AkIllegalDataException;
 
+import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 
@@ -71,10 +72,14 @@ public class MinUdaf extends BaseUdaf <Object, MinUdaf.MinMaxData> {
 						if(i1 == null && i2 != null) {
 							return 1;
 						}
-						if (((Number) i2).doubleValue() < ((Number) i1).doubleValue()) {
-							return 1;
+						if(i1 instanceof Number) {
+							return -(Double.compare(((Number) i2).doubleValue(),((Number) i1).doubleValue()));
 						}
-						return -1;
+
+						if(i1 instanceof Timestamp) {
+							return -(((Timestamp) i2).compareTo((Timestamp) i1));
+						}
+						throw new AkIllegalDataException("type is not support.");
 					}
 				});
 			} else {
@@ -82,7 +87,7 @@ public class MinUdaf extends BaseUdaf <Object, MinUdaf.MinMaxData> {
 					@Override
 					public int compare(Object i1, Object i2) {
 						if (i1 == null && i2 == null) {
-                            return -1;
+							return -1;
 						}
 						if(i1 == null && i2 != null) {
 							return -1;
@@ -90,10 +95,14 @@ public class MinUdaf extends BaseUdaf <Object, MinUdaf.MinMaxData> {
 						if(i1 != null && i2 == null) {
 							return -1;
 						}
-						if (((Number) i2).doubleValue() > ((Number) i1).doubleValue()) {
-							return 1;
+						if(i1 instanceof Number) {
+							return Double.compare(((Number) i2).doubleValue(),((Number) i1).doubleValue());
 						}
-						return -1;
+
+						if(i1 instanceof Timestamp) {
+							return ((Timestamp) i2).compareTo((Timestamp) i1);
+						}
+						throw new AkIllegalDataException("type is not support.");
 					}
 				});
 			}

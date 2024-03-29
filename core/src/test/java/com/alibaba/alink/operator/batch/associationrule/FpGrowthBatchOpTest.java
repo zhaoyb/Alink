@@ -13,6 +13,8 @@ import org.junit.Test;
 public class FpGrowthBatchOpTest extends AlinkTestBase {
 	@Test
 	public void testFpGrowth() throws Exception {
+		BatchOperator.setParallelism(1);
+
 		Row[] rows = new Row[] {
 			Row.of("A,B,C,D"),
 			Row.of("B,C,E"),

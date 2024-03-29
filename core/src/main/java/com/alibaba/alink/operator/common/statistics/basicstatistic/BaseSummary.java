@@ -42,7 +42,7 @@ public abstract class BaseSummary implements Serializable {
 	/**
 	 * count.
 	 */
-	protected long count;
+	public long count;
 
 	/**
 	 * count.

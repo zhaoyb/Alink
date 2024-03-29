@@ -13,6 +13,7 @@ import com.alibaba.alink.common.exceptions.AkPreconditions;
 import com.alibaba.alink.common.linalg.DenseVector;
 import com.alibaba.alink.common.linalg.SparseVector;
 import com.alibaba.alink.common.type.AlinkTypes;
+import com.alibaba.alink.common.type.BigDecimalTypeInfo;
 import com.alibaba.alink.common.viz.DataTypeDisplayInterface;
 import com.alibaba.alink.operator.common.io.types.FlinkTypeConverter;
 import com.alibaba.alink.operator.common.similarity.similarity.LevenshteinSimilarity;
@@ -403,7 +404,8 @@ public class TableUtil {
 			|| Types.INT.equals(dataType)
 			|| Types.FLOAT.equals(dataType)
 			|| Types.SHORT.equals(dataType)
-			|| Types.BIG_DEC.equals(dataType);
+			|| Types.BIG_DEC.equals(dataType)
+			|| dataType instanceof BigDecimalTypeInfo;
 	}
 
 	/**
@@ -435,7 +437,7 @@ public class TableUtil {
 	 * @return whether it is string type
 	 */
 	public static boolean isString(TypeInformation <?> dataType) {
-		return Types.STRING == dataType;
+		return Types.STRING.equals(dataType);
 	}
 
 	/**

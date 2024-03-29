@@ -30,6 +30,7 @@ import com.alibaba.alink.common.annotation.PortSpec;
 import com.alibaba.alink.common.annotation.PortType;
 import com.alibaba.alink.common.annotation.TypeCollections;
 import com.alibaba.alink.common.exceptions.AkIllegalOperatorParameterException;
+import com.alibaba.alink.common.exceptions.AkIllegalStateException;
 import com.alibaba.alink.common.exceptions.AkUnclassifiedErrorException;
 import com.alibaba.alink.operator.batch.utils.WithModelInfoBatchOp;
 import com.alibaba.alink.common.utils.TableUtil;
@@ -119,6 +120,28 @@ public final class QuantileDiscretizerTrainBatchOp extends BatchOperator <Quanti
 			.withBroadcastSet(quantileData.f3, "missingCounts")
 			.groupBy(0)
 			.reduceGroup(new ReduceQuantile());
+	}
+
+	public static DataSet <Row> quantileNotMerge(
+		DataSet <Row> input,
+		final int[] quantileNum,
+		final HasRoundMode.RoundMode roundMode,
+		final boolean zeroAsMissing) {
+
+		Tuple4 <DataSet <PairComparable>, DataSet <Tuple2 <Integer, Long>>,
+			DataSet <Long>, DataSet <Tuple2 <Integer, Long>>> quantileData =
+			quantilePreparing(input, zeroAsMissing);
+
+		/* calculate quantile */
+		return quantileData.f0
+			.mapPartition(new MultiQuantile(quantileNum, roundMode))
+			.name("quantile_map")
+			.withBroadcastSet(quantileData.f1, "counts")
+			.withBroadcastSet(quantileData.f2, "totalCnt")
+			.withBroadcastSet(quantileData.f3, "missingCounts")
+			.groupBy(0)
+			.reduceGroup(new ReduceQuantileNotMerge(quantileNum))
+			.name("quantile_reduce");
 	}
 
 	public static Tuple4 <DataSet <PairComparable>, DataSet <Tuple2 <Integer, Long>>,
@@ -308,7 +331,8 @@ public final class QuantileDiscretizerTrainBatchOp extends BatchOperator <Quanti
 		BatchOperator <?> in = checkAndGetFirst(inputs);
 		if (getParams().contains(QuantileDiscretizerTrainParams.NUM_BUCKETS) && getParams().contains(
 			QuantileDiscretizerTrainParams.NUM_BUCKETS_ARRAY)) {
-			throw new AkIllegalOperatorParameterException("It can not set num_buckets and num_buckets_array at the same time.");
+			throw new AkIllegalOperatorParameterException(
+				"It can not set num_buckets and num_buckets_array at the same time.");
 		}
 
 		String[] quantileColNames =
@@ -509,6 +533,50 @@ public final class QuantileDiscretizerTrainBatchOp extends BatchOperator <Quanti
 			}
 
 			LOG.info("{} mapPartition end.", getRuntimeContext().getTaskName());
+		}
+	}
+
+	public static class ReduceQuantileNotMerge extends RichGroupReduceFunction <Tuple2 <Integer, Number>, Row> {
+		private int[] quantileNum;
+
+		public ReduceQuantileNotMerge(int[] quantileNum) {
+			this.quantileNum = quantileNum;
+		}
+
+		@Override
+		public void open(Configuration parameters) throws Exception {
+			super.open(parameters);
+			LOG.info("{} open.", getRuntimeContext().getTaskName());
+		}
+
+		@Override
+		public void close() throws Exception {
+			super.close();
+			LOG.info("{} close.", getRuntimeContext().getTaskName());
+		}
+
+		@Override
+		public void reduce(Iterable <Tuple2 <Integer, Number>> values, Collector <Row> out) throws Exception {
+			List <Number> numbersList = new ArrayList <>();
+			int id = -1;
+			for (Tuple2 <Integer, Number> val : values) {
+				id = val.f0;
+				numbersList.add(val.f1);
+			}
+
+			Number[] numbers = numbersList.toArray(new Number[0]);
+
+			if (quantileNum[id] - 1 != numbers.length) {
+				throw new AkIllegalStateException("quantile size is not equal with quantile num." + numbers.length);
+			}
+			Arrays.sort(numbers, new Comparator <Number>() {
+				@Override
+				public int compare(Number o1, Number o2) {
+					return SortUtils.OBJECT_COMPARATOR.compare(o1, o2);
+				}
+			});
+
+			out.collect(Row.of(id, numbers));
 		}
 	}
 

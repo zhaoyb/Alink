@@ -22,7 +22,7 @@ public class MaxAbsScalerModelInfoBatchOp
 	}
 
 	@Override
-	protected MaxAbsScalarModelInfo createModelInfo(List <Row> rows) {
+	public MaxAbsScalarModelInfo createModelInfo(List <Row> rows) {
 		return new MaxAbsScalarModelInfo(rows);
 	}
 }

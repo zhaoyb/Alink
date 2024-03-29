@@ -60,21 +60,21 @@ public class OcsvmDetectorTest extends AlinkTestBase {
 		Tuple3 <Boolean, Double, Map <String, String>>[] results = detector.detect(mtable, false);
 
 		Tuple3 <Boolean, Double, Map <String, String>>[] expected = new Tuple3[] {
-			Tuple3.of(false, -0.004866365803762207, null),
-			Tuple3.of(false, -2.543822801293061E-7, null),
-			Tuple3.of(false, -0.00634038838071227, null),
-			Tuple3.of(true, 0.002876713705920686, null),
-			Tuple3.of(false, -0.006244249254737877, null),
-			Tuple3.of(false, -0.0039032908070115724, null),
-			Tuple3.of(true, 0.00750914467581465, null),
-			Tuple3.of(false, -2.5438227968521687E-7, null),
-			Tuple3.of(false, -0.0030486807108451863, null),
-			Tuple3.of(false, -0.00562383575012948, null),
-			Tuple3.of(false, -0.0042307218010080305, null),
-			Tuple3.of(true, 5.087645602586122E-7, null),
-			Tuple3.of(true, 1.981080792664693, null),
-			Tuple3.of(true, 1.9810807927054253, null),
-			Tuple3.of(true, 1.981080792664693, null)
+			Tuple3.of(false, -2.9943042603019343, null),
+			Tuple3.of(false, -2.9876686889849307, null),
+			Tuple3.of(false, -2.9963384851736583, null),
+			Tuple3.of(false, -2.982890547267676, null),
+			Tuple3.of(false, -2.9880841374659264, null),
+			Tuple3.of(false, -2.993707255816288, null),
+			Tuple3.of(false, -2.9469064418039776, null),
+			Tuple3.of(false, -2.972330960082365, null),
+			Tuple3.of(false, -2.985641230366144, null),
+			Tuple3.of(false, -2.996339247195407, null),
+			Tuple3.of(false, -2.988920681475392, null),
+			Tuple3.of(false, -2.9875489813688842, null),
+			Tuple3.of(true, 2.9963384851736583, null),
+			Tuple3.of(true, 2.9963384851736583, null),
+			Tuple3.of(true, 2.9963384851736583, null)
 		};
 
 		Assert.assertEquals(expected.length, results.length);

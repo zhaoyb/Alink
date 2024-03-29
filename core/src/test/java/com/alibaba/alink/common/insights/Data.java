@@ -4,6 +4,8 @@ import com.alibaba.alink.operator.batch.BatchOperator;
 import com.alibaba.alink.operator.batch.source.CsvSourceBatchOp;
 import com.alibaba.alink.operator.local.LocalOperator;
 import com.alibaba.alink.operator.local.source.CsvSourceLocalOp;
+import com.alibaba.alink.operator.stream.StreamOperator;
+import com.alibaba.alink.operator.stream.source.CsvSourceStreamOp;
 
 public class Data {
 
@@ -33,6 +35,16 @@ public class Data {
 			.setIgnoreFirstLine(true);
 	}
 
+	public static StreamOperator <?> getCarSalesStreamSource() {
+		String filePath = new Data().getPath("CarSales.csv");
+		String schema = "year string, brand string, category string, model string, sales double";
+
+		return new CsvSourceStreamOp()
+			.setFilePath(filePath)
+			.setSchemaStr(schema)
+			.setIgnoreFirstLine(true);
+	}
+
 	public static BatchOperator <?> getCensusBatchSource() {
 		String filePath = new Data().getPath("Census.csv");
 		String schema
@@ -54,7 +66,6 @@ public class Data {
 			.setSchemaStr(schema)
 			.setIgnoreFirstLine(true);
 	}
-
 
 	static LocalOperator <?> getCensusLocalSource() {
 		String filePath = new Data().getPath("Census.csv");

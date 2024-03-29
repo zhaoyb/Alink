@@ -25,7 +25,7 @@ public class LinearSvmModelInfoBatchOp
 	}
 
 	@Override
-	protected LinearClassifierModelInfo createModelInfo(List <Row> rows) {
+	public LinearClassifierModelInfo createModelInfo(List <Row> rows) {
 		return new LinearClassifierModelInfo(rows);
 	}
 

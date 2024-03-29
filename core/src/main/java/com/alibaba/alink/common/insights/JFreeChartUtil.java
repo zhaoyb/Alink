@@ -45,8 +45,9 @@ import java.util.Map.Entry;
 
 public class JFreeChartUtil {
 
-	public static boolean isNumberType(TypeInformation<?> type) {
-		return type.equals(Types.INT) || type.equals(Types.LONG) || type.equals(Types.DOUBLE) || type.equals(Types.FLOAT) || type.equals(Types.SHORT);
+	public static boolean isNumberType(TypeInformation <?> type) {
+		return type.equals(Types.INT) || type.equals(Types.LONG) || type.equals(Types.DOUBLE) || type.equals(
+			Types.FLOAT) || type.equals(Types.SHORT);
 	}
 
 	public static void generateChart(Insight insight, String filename) {
@@ -136,7 +137,10 @@ public class JFreeChartUtil {
 		LayoutData data = insight.layout;
 		DefaultPieDataset dataset = new DefaultPieDataset();
 		for (Row row : data.data.getRows()) {
-			dataset.setValue((Comparable) row.getField(0), (Number) row.getField(1));
+			Object obj = row.getField(0);
+			if (obj != null) {
+				dataset.setValue((Comparable) row.getField(0), (Number) row.getField(1));
+			}
 		}
 		dataset.sortByValues(SortOrder.DESCENDING);
 
@@ -151,7 +155,7 @@ public class JFreeChartUtil {
 	private static void outstandingNo1(Insight insight, String filename) {
 		LayoutData data = insight.layout;
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-		List <Tuple2 <Comparable, Number>> list = new ArrayList<>();
+		List <Tuple2 <Comparable, Number>> list = new ArrayList <>();
 		for (Row row : data.data.getRows()) {
 			if (null == row.getField(0) || null == row.getField(1)) {
 				continue;
@@ -214,7 +218,7 @@ public class JFreeChartUtil {
 			data.title, data.xAxis, data.yAxis, dataset, PlotOrientation.HORIZONTAL, true, true, false
 		);
 		saveChart(chart, filename, 500, 500);
- 	}
+	}
 
 	private static void correlation(Insight insight, String filename) {
 		LayoutData data = insight.layout;
@@ -275,12 +279,13 @@ public class JFreeChartUtil {
 		} else {
 			DefaultCategoryDataset datasetA = new DefaultCategoryDataset();
 			DefaultCategoryDataset datasetB = new DefaultCategoryDataset();
-			ArrayList<Tuple3 <String, Number, Number>> values = new ArrayList <>();
+			ArrayList <Tuple3 <String, Number, Number>> values = new ArrayList <>();
 			for (Row row : data.data.getRows()) {
 				if (null == row.getField(0) || null == row.getField(1) || null == row.getField(2)) {
 					continue;
 				}
-				values.add(Tuple3.of(String.valueOf(row.getField(0)),(Number) row.getField(1),(Number) row.getField(2)));
+				values.add(
+					Tuple3.of(String.valueOf(row.getField(0)), (Number) row.getField(1), (Number) row.getField(2)));
 				double a = Double.parseDouble(String.valueOf(row.getField(1)));
 				double b = Double.parseDouble(String.valueOf(row.getField(2)));
 				maxA = Math.max(a, maxA);

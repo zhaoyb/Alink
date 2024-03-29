@@ -1,6 +1,24 @@
 package com.alibaba.alink.operator.local.sql;
 
+import com.alibaba.alink.common.MTable;
+import com.alibaba.alink.operator.local.LocalOperator;
+import com.alibaba.alink.operator.local.source.MemSourceLocalOp;
+
 public class IrisData {
+
+	public static LocalOperator <?> getLocalSourceOp() {
+		return new MemSourceLocalOp(IrisData.irisDoubleArray,
+			new String[] {"sepal_length", "sepal_width", "petal_length", "petal_width", "category"});
+	}
+
+	public static MTable getMTable() {
+		return new MTable(IrisData.irisDoubleArray,
+			new String[] {"sepal_length", "sepal_width", "petal_length", "petal_width", "category"});
+	}
+
+	public static MTable getMTable(int firstN) {
+		return getMTable().subTable(0, firstN);
+	}
 
 	public static Object[][] irisDoubleArray = new Object[][] {
 		{5.1, 3.5, 1.4, 0.2, "Iris-setosa"},

@@ -22,7 +22,7 @@ public class RandomForestRegModelInfoBatchOp
 	}
 
 	@Override
-	protected RandomForestModelInfo createModelInfo(List <Row> rows) {
+	public RandomForestModelInfo createModelInfo(List <Row> rows) {
 		return new RandomForestModelInfo(rows);
 	}
 }

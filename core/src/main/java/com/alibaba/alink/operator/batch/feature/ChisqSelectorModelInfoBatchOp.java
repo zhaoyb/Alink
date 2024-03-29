@@ -22,7 +22,7 @@ public class ChisqSelectorModelInfoBatchOp
 	}
 
 	@Override
-	protected ChisqSelectorModelInfo createModelInfo(List <Row> rows) {
+	public ChisqSelectorModelInfo createModelInfo(List <Row> rows) {
 		return new ChisqSelectorModelInfo(rows);
 	}
 }
