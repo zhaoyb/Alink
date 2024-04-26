@@ -150,7 +150,7 @@ public class SelectUtils {
 				}
 			}
 			if (count > 0) {
-				outputCols[i] = outputCols[i] + (count-1);
+				outputCols[i] = outputCols[i] + (count - 1);
 			}
 		}
 		return Tuple2.of(inputCols, outputCols);
@@ -178,5 +178,40 @@ public class SelectUtils {
 			newClause = StringUtils.join(splits, ",");
 		}
 		return newClause;
+	}
+
+	public static Tuple2 <String, Boolean>[] splitClauseBySimpleClause(String clause, String[] colNames) {
+		String[] splits = StringUtils.split(clause, ",");
+		Boolean[] isSimpleClauses = new Boolean[splits.length];
+		List <Tuple2 <String, Boolean>> out = new ArrayList <>();
+		String tmp = splits[0];
+		isSimpleClauses[0] = isSimpleSelect(splits[0], colNames);
+		for (int i = 1; i < splits.length; i++) {
+			isSimpleClauses[i] = isSimpleSelect(splits[i], colNames);
+			if (!isCompleteClause(tmp) || isSimpleClauses[i] == isSimpleClauses[i - 1]) {
+				tmp = tmp + ", " + splits[i];
+			} else {
+				out.add(Tuple2.of(tmp.trim(), isSimpleClauses[i - 1]));
+				tmp = splits[i];
+			}
+		}
+		if (!tmp.isEmpty()) {
+			out.add(Tuple2.of(tmp.trim(), isSimpleClauses[splits.length - 1]));
+		}
+		return out.toArray(new Tuple2[0]);
+	}
+
+	// todo: Only considered parentheses, not quotation marks。
+	static boolean isCompleteClause(String clause) {
+		int leftParenthesisCount = 0;
+		int rightParenthesisCount = 0;
+		for (char c : clause.toCharArray()) {
+			if (c == '(') {
+				leftParenthesisCount++;
+			} else if(c == ')'){
+				rightParenthesisCount++;
+			}
+		}
+		return leftParenthesisCount == rightParenthesisCount;
 	}
 }

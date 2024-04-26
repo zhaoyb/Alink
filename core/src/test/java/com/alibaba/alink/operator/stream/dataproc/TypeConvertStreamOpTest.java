@@ -54,6 +54,6 @@ public class TypeConvertStreamOpTest extends AlinkTestBase {
 		ret1.orderBy(0);
 
 		Assert.assertEquals(Row.of(1L, 1L, 1L, 1L, 1L), ret.getRows().get(0));
-		Assert.assertEquals(Row.of("1", "1", "1.1", "1.0", "true"), ret1.getRows().get(0));
+		Assert.assertEquals(Row.of("1", "1", "1.1", "1", "TRUE"), ret1.getRows().get(0));
 	}
 }

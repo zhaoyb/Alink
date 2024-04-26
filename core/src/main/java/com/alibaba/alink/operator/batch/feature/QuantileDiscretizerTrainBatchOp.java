@@ -32,9 +32,9 @@ import com.alibaba.alink.common.annotation.TypeCollections;
 import com.alibaba.alink.common.exceptions.AkIllegalOperatorParameterException;
 import com.alibaba.alink.common.exceptions.AkIllegalStateException;
 import com.alibaba.alink.common.exceptions.AkUnclassifiedErrorException;
-import com.alibaba.alink.operator.batch.utils.WithModelInfoBatchOp;
 import com.alibaba.alink.common.utils.TableUtil;
 import com.alibaba.alink.operator.batch.BatchOperator;
+import com.alibaba.alink.operator.batch.utils.WithModelInfoBatchOp;
 import com.alibaba.alink.operator.common.dataproc.SortUtils;
 import com.alibaba.alink.operator.common.dataproc.SortUtilsNext;
 import com.alibaba.alink.operator.common.feature.ContinuousRanges;
@@ -378,16 +378,24 @@ public final class QuantileDiscretizerTrainBatchOp extends BatchOperator <Quanti
 	public static class MultiQuantile
 		extends RichMapPartitionFunction <PairComparable, Tuple2 <Integer, Number>> {
 		private static final long serialVersionUID = -467677491431226184L;
+		private final HasRoundMode.RoundMode roundType;
+		private final boolean quantileIncludesBoundary;
 		protected int[] quantileNum;
 		private List <Tuple2 <Integer, Long>> counts;
 		private List <Tuple2 <Integer, Long>> missingCounts;
 		private long totalCnt = 0;
-		private HasRoundMode.RoundMode roundType;
 		private int taskId;
 
 		public MultiQuantile(int[] quantileNum, HasRoundMode.RoundMode roundType) {
 			this.quantileNum = quantileNum;
 			this.roundType = roundType;
+			this.quantileIncludesBoundary = false;
+		}
+
+		public MultiQuantile(int[] quantileNum, HasRoundMode.RoundMode roundType, boolean quantileIncludesBoundary) {
+			this.quantileNum = quantileNum;
+			this.roundType = roundType;
+			this.quantileIncludesBoundary = quantileIncludesBoundary;
 		}
 
 		@Override
@@ -519,7 +527,10 @@ public final class QuantileDiscretizerTrainBatchOp extends BatchOperator <Quanti
 				QIndex qIndex = new QIndex(
 					totalCnt - missingCounts.get(fIdx).f1, quantileNum[fIdx], roundType);
 
-				for (int j = 1; j < quantileNum[fIdx]; ++j) {
+				int leftBoundary = quantileIncludesBoundary ? 0 : 1;
+				int rightBoundary = quantileIncludesBoundary ? quantileNum[fIdx] + 1 : quantileNum[fIdx];
+
+				for (int j = leftBoundary; j < rightBoundary; ++j) {
 					long index = qIndex.genIndex(j);
 
 					if (index >= subStart && index < subEnd) {

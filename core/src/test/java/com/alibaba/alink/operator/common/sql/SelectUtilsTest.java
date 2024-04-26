@@ -1,5 +1,8 @@
 package com.alibaba.alink.operator.common.sql;
 
+import org.apache.flink.api.java.tuple.Tuple2;
+
+import com.alibaba.alink.common.utils.JsonConverter;
 import com.alibaba.alink.testutil.AlinkTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,6 +34,19 @@ public class SelectUtilsTest extends AlinkTestBase {
 		Assert.assertFalse(SelectUtils.isSimpleSelect("f_long+1 as f1, f_double", colNames));
 		Assert.assertTrue(SelectUtils.isSimpleSelect("*", colNames));
 		Assert.assertTrue(SelectUtils.isSimpleSelect("*, f_double as fr_1", colNames));
+	}
+
+	@Test
+	public void testSplit() {
+		String sqlStr = "ts, TIMESTAMPDIFF(DAY, ts, TIMESTAMP '2022-05-11 00:00:00') AS past_days,"
+			+ " TIMESTAMPDIFF(WEEK, ts, TIMESTAMP '2022-05-11 00:00:00') AS past_weeks,"
+			+ " TIMESTAMPDIFF(MONTH, ts, TIMESTAMP '2022-05-11 00:00:00') AS past_months,"
+			+ " TIMESTAMPDIFF(YEAR, ts, TIMESTAMP '2022-05-11 00:00:00') AS past_years";
+
+		String[] colNames = new String[] {"user_id", "ts", "type"};
+
+		Tuple2 <String, Boolean>[] t2 = SelectUtils.splitClauseBySimpleClause(sqlStr, colNames);
+		System.out.println(JsonConverter.toJson(t2));
 	}
 
 }

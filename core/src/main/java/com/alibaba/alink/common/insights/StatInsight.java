@@ -20,7 +20,41 @@ import java.util.Set;
 public class StatInsight {
 
 	public static boolean isNumberType(TypeInformation<?> type) {
-		return type.equals(Types.INT) || type.equals(Types.LONG) || type.equals(Types.DOUBLE) || type.equals(Types.FLOAT)  || type.equals(Types.SHORT);
+		return type.equals(Types.INT) || type.equals(Types.LONG) || type.equals(Types.DOUBLE) || type.equals(Types.FLOAT)
+			|| type.equals(Types.SHORT) || type.equals(Types.BIG_DEC) || type.equals(Types.BIG_INT);
+	}
+
+	public static Insight basicStatForString(LocalOperator <?> dataAggr, String colName) {
+		Insight insight = new Insight();
+		insight.type = InsightType.BasicStat;
+		List<Row> list = dataAggr.getOutputTable().getRows();
+		// colName, term, frequency
+		int distinct_count = 0;
+		long count = 0L;
+		List<Integer> countList = new ArrayList <>();
+		for (Row row : list) {
+			Object object = row.getField(0);
+			if (null == object) {
+				continue;
+			}
+			if (object.equals(colName)) {
+				distinct_count++;
+				count += Long.valueOf(String.valueOf(row.getField(2)));
+				countList.add((Integer) row.getField(2));
+			}
+		}
+		LayoutData layoutData = new LayoutData();
+		String schema = "distinct_count_value int, count_value long";
+		Row row = new Row(2);
+		row.setField(0, distinct_count);
+		row.setField(1, count);
+		MTable mTable = new MTable(new Row[]{row}, schema);
+		layoutData.data = mTable;
+		layoutData.title = "数据列 " + colName + " 统计数据";
+		layoutData.xAxis = colName;
+		insight.layout = layoutData;
+		insight.score = 0.8;
+		return insight;
 	}
 
 	public static Insight basicStat(LocalOperator <?> dataAggr, String colName) {

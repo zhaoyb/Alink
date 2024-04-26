@@ -22,6 +22,7 @@ import java.util.concurrent.Future;
 
 public class DecisionTree {
 	private final DenseData data;
+	private final int[] indices;
 	private final Params params;
 	private final Deque <Tuple2 <Node, SequentialFeatureSplitter[]>> queue = new ArrayDeque <>();
 	private final Random random;
@@ -32,7 +33,12 @@ public class DecisionTree {
 	private final ArrayList <Future <Double>> futures;
 
 	public DecisionTree(DenseData data, Params params, ExecutorService executorService) {
+		this(data, null, params, executorService);
+	}
+
+	public DecisionTree(DenseData data, int[] indices, Params params, ExecutorService executorService) {
 		this.data = data;
+		this.indices = indices;
 		this.params = params;
 		this.random = new Random(params.get(HasSeed.SEED));
 
@@ -116,7 +122,7 @@ public class DecisionTree {
 				try {
 					gain = futures.get(j).get();
 				} catch (InterruptedException | ExecutionException e) {
-					throw new AkUnclassifiedErrorException("Error. ",e);
+					throw new AkUnclassifiedErrorException("Error. ", e);
 				}
 
 				if (gain > bestGain || bestSplitter == null) {
@@ -174,12 +180,25 @@ public class DecisionTree {
 	}
 
 	private SequentialPartition initSequentialPartition() {
-		ArrayList <Tuple2 <Integer, Double>> dataIndices = new ArrayList <>(data.m);
-		for (int i = 0; i < data.m; ++i) {
-			dataIndices.add(Tuple2.of(i, data.weights[i]));
-		}
+		if (null == indices) {
 
-		return new SequentialPartition(dataIndices);
+			ArrayList <Tuple2 <Integer, Double>> dataIndices = new ArrayList <>(data.m);
+			for (int i = 0; i < data.m; ++i) {
+				dataIndices.add(Tuple2.of(i, data.weights[i]));
+			}
+
+			return new SequentialPartition(dataIndices);
+
+		} else {
+
+			ArrayList <Tuple2 <Integer, Double>> dataIndices = new ArrayList <>(indices.length);
+			for (int index : indices) {
+				dataIndices.add(Tuple2.of(index, data.weights[index]));
+			}
+
+			return new SequentialPartition(dataIndices);
+
+		}
 	}
 
 	private SequentialFeatureSplitter[] initSplitters(SequentialPartition partition) {

@@ -19,14 +19,14 @@ import com.alibaba.alink.operator.stream.utils.TimeUtil;
 import com.alibaba.alink.operator.common.statistics.basicstatistic.QuantileWindowFunction;
 import com.alibaba.alink.operator.stream.StreamOperator;
 import com.alibaba.alink.params.shared.HasTimeCol_null;
-import com.alibaba.alink.params.statistics.QuantileParams;
+import com.alibaba.alink.params.statistics.QuantileStreamParams;
 
 @InputPorts(values = {@PortSpec(PortType.DATA)})
 @OutputPorts(values = {@PortSpec(value = PortType.DATA, desc = PortDesc.OUTPUT_RESULT)})
 @NameCn("分位数")
 @NameEn("Quantile")
 public final class QuantileStreamOp extends StreamOperator <QuantileStreamOp>
-	implements QuantileParams <QuantileStreamOp> {
+	implements QuantileStreamParams <QuantileStreamOp> {
 
 	private static final long serialVersionUID = 8927492832239574864L;
 

@@ -29,6 +29,14 @@ import com.alibaba.alink.common.sql.builtin.agg.SumUdaf;
 import com.alibaba.alink.common.sql.builtin.agg.TimeSeriesAgg;
 import com.alibaba.alink.common.sql.builtin.agg.VarPopUdaf;
 import com.alibaba.alink.common.sql.builtin.agg.VarSampUdaf;
+import com.alibaba.alink.common.sql.builtin.string.string.DateAdd;
+import com.alibaba.alink.common.sql.builtin.string.string.DateDiff;
+import com.alibaba.alink.common.sql.builtin.string.string.DateSub;
+import com.alibaba.alink.common.sql.builtin.string.string.KeyValue;
+import com.alibaba.alink.common.sql.builtin.string.string.RegExp;
+import com.alibaba.alink.common.sql.builtin.string.string.RegExpExtract;
+import com.alibaba.alink.common.sql.builtin.string.string.RegExpReplace;
+import com.alibaba.alink.common.sql.builtin.string.string.SplitPart;
 import com.alibaba.alink.common.sql.builtin.time.DataFormat;
 import com.alibaba.alink.common.sql.builtin.time.FromUnixTime;
 import com.alibaba.alink.common.sql.builtin.time.Now;
@@ -47,6 +55,19 @@ public class BuiltInAggRegister {
 		env.registerFunction("unix_timestamp", new UnixTimeStamp());
 		env.registerFunction("from_unixtime", new FromUnixTime());
 		env.registerFunction("date_format_ltz", new DataFormat());
+
+		env.registerFunction("split_part", new SplitPart());
+		env.registerFunction("keyvalue", new KeyValue());
+		env.registerFunction("datediff", new DateDiff());
+		env.registerFunction("regexp_replace", new RegExpReplace());
+		env.registerFunction("REGEXP_REPLACE", new RegExpReplace());
+		env.registerFunction("regexp", new RegExp());
+		env.registerFunction("REGEXP", new RegExp());
+		env.registerFunction("regexp_extract", new RegExpExtract());
+		env.registerFunction("REGEXP_EXTRACT", new RegExpExtract());
+		env.registerFunction("DATE_ADD", new DateAdd());
+		env.registerFunction("DATE_SUB", new DateSub());
+
 	}
 
 	public static void registerUdf(LocalOpCalciteSqlExecutor executor) {

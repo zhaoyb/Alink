@@ -287,7 +287,8 @@ public class TableSummary extends BaseSummary {
 		int idx = findIdx(colName);
 		double mean = mean(colName);
 		if (idx >= 0) {
-			return (sum4.get(idx) - 4 * sum3.get(idx) * mean + 6 * sum2.get(idx) * mean * mean - 3 * sum.get(idx) * mean * mean * mean) / count;
+			return (sum4.get(idx) - 4 * sum3.get(idx) * mean + 6 * sum2.get(idx) * mean * mean - 3 * sum.get(idx) * mean
+				* mean * mean) / count;
 		} else {
 			return Double.NaN;
 		}

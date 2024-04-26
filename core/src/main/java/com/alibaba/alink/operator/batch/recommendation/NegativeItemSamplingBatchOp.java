@@ -118,7 +118,7 @@ public final class NegativeItemSamplingBatchOp
 			.reduceGroup(
 				new RichGroupReduceFunction <Tuple3 <String, Object, Object>, Tuple3 <Object, Object, Long>>() {
 					private static final long serialVersionUID = 306722066512456784L;
-					transient List <Long> candidates;
+					transient List <Object> candidates;
 					transient Random random;
 
 					@Override

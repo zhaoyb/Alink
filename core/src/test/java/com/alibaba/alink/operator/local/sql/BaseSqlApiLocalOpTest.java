@@ -8,8 +8,6 @@ import com.alibaba.alink.operator.local.source.MemSourceLocalOp;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.sql.Timestamp;
-
 public class BaseSqlApiLocalOpTest {
 
 	Row[] rows = new Row[] {
@@ -24,30 +22,16 @@ public class BaseSqlApiLocalOpTest {
 		Row.of("4L", "3L", 10.0),
 	};
 
-	@Test
-	public void test1() throws Exception {
-		LocalOperator data = new MemSourceLocalOp(rows, new String[] {"f1", "f2", "f3"});
-		LocalOperator data1 = new MemSourceLocalOp(rows1, new String[] {"f1", "f2", "f3"});
-
-		new FullOuterJoinLocalOp().setJoinPredicate("a.f1=b.f1")
-			.setSelectClause("case when a.f1 is null then b.f1 when b.f1 is null then a.f1 else b.f1 end as uid, "
-				+ "case when a.f1 is null then b.f3 when b.f1 is null then a.f3 else b.f3 end as factors")
-			.linkFrom(data, data1).print();
-	}
 
 	@Test
 	public void test() {
 		LocalOperator data = new MemSourceLocalOp(rows, new String[] {"f1", "f2", "f3"});
 		Assert.assertEquals(data.select("f1").getColNames().length, 1);
 		Assert.assertEquals(data.select(new String[] {"f1", "f2"}).getColNames().length, 2);
-		Assert.assertEquals(new JoinLocalOp().setJoinPredicate("a.f1=b.f1").setSelectClause("a.f1 as f1")
-			.linkFrom(data, data).getColNames().length, 1);
-		Assert.assertEquals(new LeftOuterJoinLocalOp().setJoinPredicate("a.f1=b.f1").setSelectClause("a.f1 as f1")
-			.linkFrom(data, data).getColNames().length, 1);
-		Assert.assertEquals(new RightOuterJoinLocalOp().setJoinPredicate("a.f1=b.f1").setSelectClause("a.f1 as f1")
-			.linkFrom(data, data).getColNames().length, 1);
-		Assert.assertEquals(new FullOuterJoinLocalOp().setJoinPredicate("a.f1=b.f1").setSelectClause("a.f1 as f1")
-			.linkFrom(data, data).getColNames().length, 1);
+		Assert.assertEquals(LocalMLEnvironment.getInstance().getSqlExecutor().join(data, data,"a.f1=b.f1","a.f1 as f1").getColNames().length, 1);
+		Assert.assertEquals(LocalMLEnvironment.getInstance().getSqlExecutor().leftOuterJoin(data, data,"a.f1=b.f1","a.f1 as f1").getColNames().length, 1);
+		Assert.assertEquals(LocalMLEnvironment.getInstance().getSqlExecutor().rightOuterJoin(data, data,"a.f1=b.f1","a.f1 as f1").getColNames().length, 1);
+		Assert.assertEquals(LocalMLEnvironment.getInstance().getSqlExecutor().fullOuterJoin(data, data,"a.f1=b.f1","a.f1 as f1").getColNames().length, 1);
 		Assert.assertEquals(LocalMLEnvironment.getInstance().getSqlExecutor().minus(data,data).getColNames().length,3);
 		//Assert.assertEquals(LocalMLEnvironment.getInstance().getSqlExecutor().minusAll(data,data).getColNames().length,3);
 		Assert.assertEquals(LocalMLEnvironment.getInstance().getSqlExecutor().union(data,data).getColNames().length,3);

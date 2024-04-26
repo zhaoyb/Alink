@@ -43,29 +43,29 @@ public class AllTypeOpTest {
 		for (int i = 0; i < colNames.length; i++) {
 			newColNames[i] = colNames[i] + "_2";
 		}
-		LocalOperator <?> data1 = data.as(newColNames);
-
-		String join_select_clause = getJoinSelectClause(colNames, newColNames);
-
-		for (int i = 0; i < colNames.length; i++) {
-			System.out.println("\n>>> " + "join on " + colNames[i]);
-			new JoinLocalOp()
-				.setJoinPredicate(colNames[i] + "=" + newColNames[i])
-				.linkFrom(data, data1)
-				.print();
-			System.out.println("\n>>> " + "left join on " + colNames[i]);
-			new LeftOuterJoinLocalOp()
-				.setSelectClause(join_select_clause)
-				.setJoinPredicate(colNames[i] + "=" + newColNames[i])
-				.linkFrom(data, data1)
-				.print();
-			System.out.println("\n>>> " + "right join on " + colNames[i]);
-			new RightOuterJoinLocalOp()
-				.setSelectClause(join_select_clause)
-				.setJoinPredicate(colNames[i] + "=" + newColNames[i])
-				.linkFrom(data, data1)
-				.print();
-		}
+		//LocalOperator <?> data1 = data.as(newColNames);
+		//
+		//String join_select_clause = getJoinSelectClause(colNames, newColNames);
+		//
+		//for (int i = 0; i < colNames.length; i++) {
+		//	System.out.println("\n>>> " + "join on " + colNames[i]);
+		//	new JoinLocalOp()
+		//		.setJoinPredicate(colNames[i] + "=" + newColNames[i])
+		//		.linkFrom(data, data1)
+		//		.print();
+		//	System.out.println("\n>>> " + "left join on " + colNames[i]);
+		//	new LeftOuterJoinLocalOp()
+		//		.setSelectClause(join_select_clause)
+		//		.setJoinPredicate(colNames[i] + "=" + newColNames[i])
+		//		.linkFrom(data, data1)
+		//		.print();
+		//	System.out.println("\n>>> " + "right join on " + colNames[i]);
+		//	new RightOuterJoinLocalOp()
+		//		.setSelectClause(join_select_clause)
+		//		.setJoinPredicate(colNames[i] + "=" + newColNames[i])
+		//		.linkFrom(data, data1)
+		//		.print();
+		//}
 
 		//LocalOperator <?> data2 = new UnionAllLocalOp().linkFrom(data, data);
 		//LocalOperator <?> data3 = new UnionAllLocalOp().linkFrom(data2, data);

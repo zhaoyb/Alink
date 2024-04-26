@@ -24,9 +24,9 @@ import java.util.List;
  */
 public class PackBatchOperatorUtil {
 	//model col prefix
-	private static final String MODEL_COL_PREFIX = "p";
+	public static final String MODEL_COL_PREFIX = "p";
 	//id col name
-	private static final String ID_COL_NAME = "id";
+	public static final String ID_COL_NAME = "id";
 
 	/**
 	 * pack batch ops
@@ -144,7 +144,7 @@ public class PackBatchOperatorUtil {
 		return Tuple2.of(new TableSchema(colNames, colTypes), colIndices);
 	}
 
-	private static int[] addOne(int[] vec) {
+	public static int[] addOne(int[] vec) {
 		for (int i = 0; i < vec.length; i++) {
 			vec[i]++;
 		}
@@ -189,13 +189,13 @@ public class PackBatchOperatorUtil {
 	/**
 	 * first entry is opIdx, second is meta, other fill with colIndices, others is null.
 	 */
-	private static class FlattenMap implements MapFunction <Row, Row> {
+	public static class FlattenMap implements MapFunction <Row, Row> {
 		private static final long serialVersionUID = -4502881391819047945L;
 		private int colNum;
 		private int opIdx;
 		private int[] colIndices;
 
-		FlattenMap(int colNum, int opIdx, int[] colIndices) {
+		public FlattenMap(int colNum, int opIdx, int[] colIndices) {
 			this.colNum = colNum;
 			this.opIdx = opIdx;
 			this.colIndices = colIndices;

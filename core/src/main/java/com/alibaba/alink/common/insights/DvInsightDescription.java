@@ -107,6 +107,10 @@ public class DvInsightDescription implements Serializable {
 	}
 
 	public static DvInsightDescription of(Insight insight) {
+		return DvInsightDescription.of(insight, new HashMap <>());
+	}
+
+	public static DvInsightDescription of(Insight insight, Map<String, String> cnNamesMap) {
 		InsightType type = insight.type;
 		int colNum = insight.layout.data.getNumCol();
 		int rowNum = insight.layout.data.getNumRow();
@@ -122,7 +126,7 @@ public class DvInsightDescription implements Serializable {
 				fields[i] = new Field();
 				fields[i].id = colNames[i];
 				fields[i].code = colNames[i];
-				fields[i].alias = colName;
+				fields[i].alias = cnNamesMap.getOrDefault(colName, colName);;
 				fields[i].abstraction = new Abstraction();
 				if (i == 0) {
 					fields[i].abstraction.aggregation = "COUNTDISTINCT";
@@ -144,7 +148,8 @@ public class DvInsightDescription implements Serializable {
 				fields[i].id = colNames[i];
 				fields[i].code = colNames[i];
 				if (i != 0) {
-					fields[i].alias = insight.subject.measures.get(i - 1).colName;
+					String colName = insight.subject.measures.get(i - 1).colName;
+					fields[i].alias = cnNamesMap.getOrDefault(colName, colName);
 					fields[i].abstraction = new Abstraction();
 					fields[i].abstraction.aggregation = insight.subject.measures.get(i - 1).aggr.getEnName();
 				}
@@ -157,7 +162,8 @@ public class DvInsightDescription implements Serializable {
 				if (i >= 1) {
 					if (insight.subject != null && insight.subject.measures != null
 						&& i - 1 < insight.subject.measures.size()) {
-						fields[i].alias = insight.subject.measures.get(i - 1).colName;
+						String colName = insight.subject.measures.get(i - 1).colName;
+						fields[i].alias = cnNamesMap.getOrDefault(colName, colName);
 						fields[i].abstraction = new Abstraction();
 						fields[i].abstraction.aggregation = insight.subject.measures.get(i - 1).aggr.getEnName();
 					}
@@ -170,7 +176,8 @@ public class DvInsightDescription implements Serializable {
 				fields[i].code = colNames[i];
 				if (i >= 1) {
 					if (insight.subject != null && insight.subject.measures != null) {
-						fields[i].alias = insight.subject.measures.get(0).colName;
+						String colName = insight.subject.measures.get(0).colName;
+						fields[i].alias = cnNamesMap.getOrDefault(colName, colName);
 						fields[i].abstraction = new Abstraction();
 						fields[i].abstraction.aggregation = insight.subject.measures.get(0).aggr.getEnName();
 					}
@@ -184,7 +191,8 @@ public class DvInsightDescription implements Serializable {
 				if (i >= 1) {
 					if (insight.subject != null && insight.subject.measures != null
 						&& i - 1 < insight.subject.measures.size()) {
-						fields[i].alias = insight.subject.measures.get(i - 1).colName;
+						String colName = insight.subject.measures.get(i - 1).colName;
+						fields[i].alias = cnNamesMap.getOrDefault(colName, colName);
 						fields[i].abstraction = new Abstraction();
 						fields[i].abstraction.aggregation = insight.subject.measures.get(i - 1).aggr.getEnName();
 					}
@@ -197,7 +205,8 @@ public class DvInsightDescription implements Serializable {
 				fields[i].code = colNames[i];
 				if (i == 1) {
 					if (insight.subject != null && insight.subject.measures != null) {
-						fields[i].alias = insight.subject.measures.get(0).colName;
+						String colName = insight.subject.measures.get(0).colName;
+						fields[i].alias = cnNamesMap.getOrDefault(colName, colName);
 						fields[i].abstraction = new Abstraction();
 						fields[i].abstraction.aggregation = insight.subject.measures.get(0).aggr.getEnName();
 					}

@@ -59,9 +59,10 @@ public final class TfidfBatchOp extends BatchOperator <TfidfBatchOp>
 		// Count doc and word count in a doc
 		final BatchOperator docStat = in.groupBy(docIdColName,
 			docIdColName + ",sum(" + countColName + ") as total_word_count");
+
 		//Count totoal word count of words
 		BatchOperator wordStat = in.groupBy(wordColName + "," + docIdColName,
-			wordColName + "," + docIdColName + ",COUNT(1 ) as tmp_count")
+				wordColName + "," + docIdColName + ",COUNT(1 ) as tmp_count")
 			.groupBy(wordColName, wordColName + ",count(1) as doc_cnt");
 
 		final String tmpColNames = docIdColName + "," + wordColName + "," + countColName + "," + "total_word_count";
@@ -83,7 +84,11 @@ public final class TfidfBatchOp extends BatchOperator <TfidfBatchOp>
 		//Count tf idf resulst of words in docs
 		this.setOutput(join2
 				.getDataSet()
-				.join(docStat.select("1 as id,count(1) as total_doc_count").getDataSet()
+				.join(docStat
+						// now not support select count(1).
+						.select("1 as tmpId, *")
+						.groupBy("tmpId", "1 as id,count(1) as total_doc_count")
+						.getDataSet()
 					, JoinOperatorBase.JoinHint.BROADCAST_HASH_SECOND)
 				.where("id1").equalTo("id")
 				.map(new MapFunction <Tuple2 <Row, Row>, Row>() {
@@ -114,7 +119,6 @@ public final class TfidfBatchOp extends BatchOperator <TfidfBatchOp>
 				}), tmpColNames2.split(","),
 			new TypeInformation <?>[] {types[docIdIndex], Types.STRING, Types.LONG, Types.LONG, Types.LONG, Types.LONG,
 				Types.DOUBLE, Types.DOUBLE, Types.DOUBLE});
-		;
 		return this;
 	}
 }
