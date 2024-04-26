@@ -6,12 +6,12 @@ import org.apache.flink.ml.api.misc.param.Params;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.types.Row;
 
-import com.alibaba.alink.common.type.AlinkTypes;
 import com.alibaba.alink.common.linalg.DenseVector;
 import com.alibaba.alink.common.linalg.SparseVector;
 import com.alibaba.alink.common.linalg.Vector;
 import com.alibaba.alink.common.linalg.VectorUtil;
 import com.alibaba.alink.common.mapper.ModelMapper;
+import com.alibaba.alink.common.type.AlinkTypes;
 import com.alibaba.alink.common.utils.TableUtil;
 import com.alibaba.alink.params.feature.HasCalculationType;
 import com.alibaba.alink.params.feature.PcaPredictParams;
@@ -108,7 +108,8 @@ public class PcaModelMapper extends ModelMapper {
 			}
 		} else {
 			for (int i = 0; i < this.featureIdxs.length; ++i) {
-				data[i] = (Double) selection.get(this.featureIdxs[i]);
+				Object obj = selection.get(this.featureIdxs[i]);
+				data[i] = (null == obj) ? Double.NaN : ((Number) obj).doubleValue();
 			}
 		}
 

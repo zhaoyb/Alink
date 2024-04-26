@@ -76,9 +76,25 @@ public class SelectBatchOpTest extends AlinkTestBase {
 
 	@Test
 	public void testCSelect5() throws Exception {
-		String[] originSqlCols = BatchSqlOperators.select(data(), "f_string, f_double, f_string, f_string").getColNames();
+		String[] originSqlCols = BatchSqlOperators.select(data(), "f_string, f_double, f_string, f_string")
+			.getColNames();
 		String[] simpleSelectCols = data().select("f_string, f_double, f_string, f_string").getColNames();
 		Assert.assertArrayEquals(originSqlCols, simpleSelectCols);
+	}
+
+	@Test
+	public void test() throws Exception {
+		List <Row> testArray = Arrays.asList(
+			Row.of("a", 1L, 1, 2.0, true),
+			Row.of(null, 2L, 2, -3.0, true),
+			Row.of("c", null, null, 2.0, false),
+			Row.of("a", 0L, 0, null, null)
+		);
+
+		String[] colNames = new String[] {"f_string", "group", "f_lint", "f_double", "f_boolean"};
+
+		BatchOperator<?> source =  new MemSourceBatchOp(testArray, colNames);
+		source.select("cast(`group` as VARCHAR) as `group`").print();
 	}
 
 	private BatchOperator <?> data() {

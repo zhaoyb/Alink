@@ -122,7 +122,8 @@ public class OverWindowBatchOp extends BatchOperator <OverWindowBatchOp>
 							}
 						}
 					}
-				);
+				)
+				.name("over_batch_map");
 
 			String[] newNames = new String[inputColNames.length + 1];
 			TypeInformation <?>[] newTypes = new TypeInformation[inputColTypes.length + 1];
@@ -148,7 +149,8 @@ public class OverWindowBatchOp extends BatchOperator <OverWindowBatchOp>
 			}
 			res = sortedPartition
 				.reduceGroup(new GroupOperation(featureClauses, orderInfo.f0,
-					partitionByIndices, reversedIndices, inputColNames));
+					partitionByIndices, reversedIndices, inputColNames))
+				.name("over_batch_reduce");
 		}
 
 		String[] resColNames = new String[featureClauses.length + reversedCols.length];

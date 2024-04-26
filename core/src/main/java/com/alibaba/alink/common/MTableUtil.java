@@ -1,9 +1,11 @@
 package com.alibaba.alink.common;
 
 import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeComparator;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.ml.api.misc.param.Params;
+import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 
@@ -13,7 +15,6 @@ import com.alibaba.alink.common.utils.TableUtil;
 import com.alibaba.alink.operator.local.AlinkLocalSession;
 import com.alibaba.alink.operator.local.AlinkLocalSession.TaskRunner;
 import com.alibaba.alink.operator.local.LocalOperator;
-import com.alibaba.alink.params.shared.HasNumThreads;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.Serializable;
@@ -77,7 +78,7 @@ public class MTableUtil implements Serializable {
 	}
 
 	static MTable select(MTable mt, String[] colNames) {
-		return select(mt, colNames, TableUtil.findColIndicesWithAssertAndHint(mt.getSchema(), colNames));
+		return selectAs(mt, TableUtil.findColIndicesWithAssertAndHint(mt.getSchema(), colNames), colNames);
 	}
 
 	static MTable select(MTable mt, int[] colIndexes) {
@@ -86,15 +87,21 @@ public class MTableUtil implements Serializable {
 		for (int i = 0; i < colIndexes.length; i++) {
 			colNames[i] = colAllNames[colIndexes[i]];
 		}
-		return select(mt, colNames, colIndexes);
+		return selectAs(mt, colIndexes, colNames);
 	}
 
-	private static MTable select(MTable mt, String[] colNames, int[] colIndexes) {
+	public static MTable selectAs(MTable mt, int[] colIndexes, String[] newColNames) {
 		ArrayList <Row> rows = new ArrayList <>();
 		for (Row r : mt.getRows()) {
 			rows.add(Row.project(r, colIndexes));
 		}
-		return new MTable(rows, colNames, TableUtil.findColTypesWithAssertAndHint(mt.getSchema(), colNames));
+		TableSchema schema = TableUtil.schemaStr2Schema(mt.getSchemaStr());
+		TypeInformation <?>[] types = schema.getFieldTypes();
+		TypeInformation <?>[] resultTypes = new TypeInformation[colIndexes.length];
+		for (int i = 0; i < colIndexes.length; i++) {
+			resultTypes[i] = types[colIndexes[i]];
+		}
+		return new MTable(rows, newColNames, resultTypes);
 	}
 
 	public static List <Row> groupFunc(MTable mt, String[] groupCols, GroupFunction func) {

@@ -74,8 +74,7 @@ final class InternalCsvSourceLocalOp extends BaseSourceLocalOp <InternalCsvSourc
 			if (protocol.equalsIgnoreCase("http") || protocol.equalsIgnoreCase("https")) {
 				HttpFileSplitReader reader = new HttpFileSplitReader(filePath);
 				rows = createInput(
-					new GenericCsvInputFormat(reader, dummySchema.getFieldTypes(), rowDelim, rowDelim,
-						ignoreFirstLine),
+					reader.getInputFormat(rowDelim, ignoreFirstLine, quoteChar),
 					new RowTypeInfo(dummySchema.getFieldTypes(), dummySchema.getFieldNames()), getParams());
 			} else {
 				RowCsvInputFormat inputFormat = new RowCsvInputFormat(

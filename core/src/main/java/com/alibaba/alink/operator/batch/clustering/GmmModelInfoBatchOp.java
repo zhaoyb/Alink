@@ -31,7 +31,7 @@ public class GmmModelInfoBatchOp
 	}
 
 	@Override
-	protected GmmModelInfo createModelInfo(List <Row> rows) {
+	public GmmModelInfo createModelInfo(List <Row> rows) {
 		GmmModelData modelData = new GmmModelDataConverter().load(rows);
 		return new GmmModelInfo(modelData);
 	}

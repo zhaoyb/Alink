@@ -29,7 +29,7 @@ public class FmRegressorModelInfoBatchOp
 	}
 
 	@Override
-	protected FmRegressorModelInfo createModelInfo(List <Row> rows) {
+	public FmRegressorModelInfo createModelInfo(List <Row> rows) {
 		return new FmRegressorModelInfo(rows);
 	}
 

@@ -8,12 +8,7 @@ import org.junit.Test;
 public class OrderByLocalOpTest {
 	@Test
 	public void testOrderByLocalOp() {
-		String URL = "https://alink-test-data.oss-cn-hangzhou.aliyuncs.com/iris.csv";
-		String SCHEMA_STR
-			= "sepal_length double, sepal_width double, petal_length double, petal_width double, category string";
-
-		LocalOperator <?> data = new TableSourceLocalOp(
-			new CsvSourceBatchOp().setFilePath(URL).setSchemaStr(SCHEMA_STR).collectMTable());
+		LocalOperator <?> data = IrisData.getLocalSourceOp();
 		data
 			.link(
 				new OrderByLocalOp()

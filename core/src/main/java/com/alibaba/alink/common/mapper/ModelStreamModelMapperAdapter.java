@@ -52,6 +52,10 @@ public class ModelStreamModelMapperAdapter extends Mapper {
 		);
 
 		this.initialModelMapper = initialModelMapper;
+
+		if (null != ioSchema) {
+			outputFieldSize = getOutputSchema().getFieldNames().length;
+		}
 	}
 
 	private static Params getParamsFromModelMapper(ModelMapper modelMapper) {

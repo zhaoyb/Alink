@@ -8,7 +8,7 @@ public class CountUdaf extends BaseSummaryUdaf {
 	}
 
 	public CountUdaf(boolean dropLast) {
-		super(dropLast);
+		super(dropLast, false);
 
 	}
 

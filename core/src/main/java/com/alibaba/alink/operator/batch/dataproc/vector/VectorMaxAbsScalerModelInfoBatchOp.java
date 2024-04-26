@@ -22,7 +22,7 @@ public class VectorMaxAbsScalerModelInfoBatchOp extends
 	}
 
 	@Override
-	protected VectorMaxAbsScalarModelInfo createModelInfo(List <Row> rows) {
+	public VectorMaxAbsScalarModelInfo createModelInfo(List <Row> rows) {
 		return new VectorMaxAbsScalarModelInfo(rows);
 	}
 }

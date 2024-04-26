@@ -22,7 +22,7 @@ public class StandardScalerModelInfoBatchOp extends
 	}
 
 	@Override
-	protected StandardScalerModelInfo createModelInfo(List <Row> rows) {
+	public StandardScalerModelInfo createModelInfo(List <Row> rows) {
 		return new StandardScalerModelInfo(rows);
 	}
 }

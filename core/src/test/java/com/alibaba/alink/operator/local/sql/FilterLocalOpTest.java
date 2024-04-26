@@ -21,9 +21,12 @@ public class FilterLocalOpTest {
 			Row.of("Nevada", 2002, 2.9),
 			Row.of("Nevada", 2003, 3.2)
 		);
-		LocalOperator <?> batch_data = new TableSourceLocalOp(new MTable(df, "f1 string, f2 int, f3 double"));
-		LocalOperator <?> op = new FilterLocalOp().setClause("f1='Ohio'");
-		batch_data = batch_data.link(op);
-		batch_data.print();
+		LocalOperator <?> source = new TableSourceLocalOp(new MTable(df, "f1 string, f2 int, f3 double"));
+		//LocalOperator <?> op = new FilterLocalOp().setClause("f1='Ohio'");
+		//source = source.link(op);
+		//source.print();
+
+		source.link(new FilterLocalOp().setClause("f1='Ohio'")).print();
+		source.link(new FilterLocalOp().setClause("f2<=2001")).print();
 	}
 }

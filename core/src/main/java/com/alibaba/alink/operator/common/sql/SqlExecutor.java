@@ -4,6 +4,7 @@ import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
 import org.apache.flink.types.Row;
 
+import com.alibaba.alink.operator.common.sql.functions.LocalAggFunction;
 import org.apache.commons.lang3.RandomStringUtils;
 
 /**
@@ -35,6 +36,9 @@ interface SqlExecutor<T> {
 	void addFunction(String name, ScalarFunction function);
 
 	void addFunction(String name, TableFunction <Row> function);
+
+	void addFunction(String name, LocalAggFunction function);
+
 	/**
 	 * Execute SQL query and return the result.
 	 *
@@ -88,6 +92,14 @@ interface SqlExecutor<T> {
 		return result;
 	}
 
+	default T where(T t, String selectClause, String predicate) {
+		String name = generateTableName();
+		addTable(name, t);
+		T result = query(String.format("SELECT %s FROM %s WHERE %s", selectClause, name, predicate));
+		removeTable(name);
+		return result;
+	}
+
 	/**
 	 * Execute filter query.
 	 *
@@ -96,6 +108,10 @@ interface SqlExecutor<T> {
 	 */
 	default T filter(T t, String predicate) {
 		return where(t, predicate);
+	}
+
+	default T filter(T t, String selectClause, String predicate) {
+		return where(t, selectClause, predicate);
 	}
 
 	/**
@@ -114,36 +130,36 @@ interface SqlExecutor<T> {
 	/**
 	 * Order the records by a specific field and return a limited number of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
-	 * @param limit     The maximum number of records to keep.
+	 * @param orderClause The name of the field by which the records are ordered.
+	 * @param limit       The maximum number of records to keep.
 	 * @return The result.
 	 */
-	default T orderBy(T t, String fieldName, boolean isAscending, int limit) {
-		return orderByImpl(t, fieldName, isAscending, limit, -1, -1);
+	default T orderBy(T t, String orderClause, boolean isAscending, int limit) {
+		return orderByImpl(t, orderClause, isAscending, limit, -1, -1);
 	}
 
 	/**
 	 * Order the records by a specific field and return a specific range of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
-	 * @param offset    The starting position of records to keep.
-	 * @param fetch     The  number of records to keep.
+	 * @param orderClause The name of the field by which the records are ordered.
+	 * @param offset      The starting position of records to keep.
+	 * @param fetch       The  number of records to keep.
 	 * @return The result.
 	 */
-	default T orderBy(T t, String fieldName, boolean isAscending, int offset, int fetch) {
-		return orderByImpl(t, fieldName, isAscending, -1, offset, fetch);
+	default T orderBy(T t, String orderClause, boolean isAscending, int offset, int fetch) {
+		return orderByImpl(t, orderClause, isAscending, -1, offset, fetch);
 	}
 
-	default T orderByImpl(T t, String fieldName, boolean isAscending, int limit, int offset, int fetch) {
+	default T orderByImpl(T t, String orderClause, boolean isAscending, int limit, int offset, int fetch) {
+		String formatOrderClause = OrderUtils.getColsAndOrdersStr(orderClause, null, isAscending);
+		System.out.println("formatOrderClause: " + formatOrderClause);
 		String name = generateTableName();
 		addTable(name, t);
 		StringBuilder s = new StringBuilder();
 		s.append("SELECT * FROM ")
 			.append(name)
 			.append(" ORDER BY ")
-			.append(fieldName)
-			.append(" ")
-			.append(isAscending ? "ASC" : "DESC");
+			.append(formatOrderClause);
 		if (limit >= 0) {
 			s.append(" LIMIT ").append(limit);
 		}

@@ -6,6 +6,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.types.Row;
 
+import com.alibaba.alink.common.utils.Stopwatch;
 import com.alibaba.alink.operator.common.linear.SoftmaxModelMapper;
 import com.alibaba.alink.params.classification.SoftmaxPredictParams;
 import com.alibaba.alink.testutil.AlinkTestBase;
@@ -69,6 +70,17 @@ public class SoftmaxModelMapperTest extends AlinkTestBase {
 
 		SoftmaxModelMapper mapper = new SoftmaxModelMapper(modelSchema, dataSchema, params);
 		mapper.loadModel(model);
+
+		//Stopwatch sw = new Stopwatch();
+		//sw.reset();
+		//sw.start();
+		//int sum = 0;
+		//for (int i = 0; i < 1000000; i++) {
+		//	sum += (Integer) mapper.map(Row.of(1.0, 7.0, 9.0)).getField(3);
+		//}
+		//sw.stop();
+		//System.out.println(sw.getElapsedTimeSpan());
+		//System.out.println(sum);
 
 		assertEquals(mapper.map(Row.of(1.0, 7.0, 9.0)).getField(3), 2);
 		assertEquals(mapper.getOutputSchema(), new TableSchema(new String[] {"f0", "f1", "f2", "pred"},

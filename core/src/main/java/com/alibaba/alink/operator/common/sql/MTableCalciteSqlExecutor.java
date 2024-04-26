@@ -22,6 +22,7 @@ import com.alibaba.alink.common.sql.builtin.time.UnixTimeStamp;
 import com.alibaba.alink.common.sql.builtin.time.UnixTimeStampMicro;
 import com.alibaba.alink.operator.batch.sql.BatchSqlOperators;
 import com.alibaba.alink.operator.common.io.types.JdbcTypeConverter;
+import com.alibaba.alink.operator.common.sql.functions.LocalAggFunction;
 import com.alibaba.alink.operator.local.sql.CalciteFunctionCompiler;
 import org.apache.calcite.avatica.AvaticaResultSetMetaData;
 import org.apache.calcite.avatica.util.Casing;
@@ -35,6 +36,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactoryImpl.JavaType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -147,6 +148,12 @@ public class MTableCalciteSqlExecutor implements SqlExecutor <MTable> {
 		}
 	}
 
+	@Override
+	public void addFunction(String name, LocalAggFunction function) {
+		rootSchema.add(name, AggregateFunctionImpl.create(function.getClass()));
+	}
+
+
 	private TableSchema extractSchema(ResultSetMetaData metaData) throws SQLException {
 		int numCols = metaData.getColumnCount();
 		String[] colNames = new String[numCols];
@@ -210,34 +217,18 @@ public class MTableCalciteSqlExecutor implements SqlExecutor <MTable> {
 				 TemporaryClassLoaderContext.of(calciteFunctionCompiler.getClassLoader())) {
 			Statement statement = connection.createStatement();
 
-			// todo: select col1 where unix_timestamp_macro(col1)=12 will exception.
 			ResultSet resultSet = statement.executeQuery(sql);
+
 			ResultSetMetaData metaData = resultSet.getMetaData();
 
 			TableSchema schema = extractSchemaByReflection(metaData);
 			int numCols = metaData.getColumnCount();
 
-			// something wrong when timestamp type input and output in calcite. need convert to long in execute
-			// query, and convert to timestamp when output.
-			boolean isHasTimeStamp = false;
 			StringBuilder sbd = new StringBuilder();
 			for (int i = 0; i < numCols; i++) {
 				sbd.append(",");
 				String colName = schema.getFieldName(i).get();
-				if (Types.SQL_TIMESTAMP == schema.getFieldType(i).get()) {
-					sbd.append(String.format("unix_timestamp_macro(%s) as %s", colName, colName));
-					isHasTimeStamp = true;
-				} else {
-					sbd.append(colName);
-				}
-			}
-
-			if (isHasTimeStamp) {
-				String newQuery = "select " + sbd.substring(1) + " from "
-					+ "\n("
-					+ sql
-					+ "\n)";
-				resultSet = statement.executeQuery(newQuery);
+				sbd.append(colName);
 			}
 
 			List <Row> data = new ArrayList <>();
@@ -245,16 +236,7 @@ public class MTableCalciteSqlExecutor implements SqlExecutor <MTable> {
 			while (resultSet.next()) {
 				Row row = new Row(numCols);
 				for (int i = 0; i < numCols; i += 1) {
-					if (Types.SQL_TIMESTAMP == schema.getFieldType(i).get()) {
-						Object tmp = resultSet.getObject(i + 1);
-						if (tmp instanceof Long) {
-							row.setField(i, new Timestamp((long)tmp));
-						} else {
-							row.setField(i, tmp);
-						}
-					} else {
-						row.setField(i, resultSet.getObject(i + 1));
-					}
+					row.setField(i, resultSet.getObject(i + 1));
 				}
 				data.add(row);
 			}

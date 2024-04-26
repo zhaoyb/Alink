@@ -156,10 +156,10 @@ public class SqlBatchOpsTest extends AlinkTestBase {
 	@Test
 	public void testNow() throws Exception {
 		MemSourceBatchOp inOp = createTable3();
-		inOp.lazyPrint(-1);
+		//inOp.lazyPrint(-1);
 
 		SelectBatchOp op = new SelectBatchOp()
-			.setClause("NOW(10) as b1, NOW(colb) as b2");
+			.setClause("NOW(10) as b1, NOW(colb) as b2, now() as b3");
 		inOp.link(op).collect();
 	}
 

@@ -11,12 +11,14 @@ import org.apache.flink.types.Row;
 
 import com.alibaba.alink.common.LocalMLEnvironment;
 import com.alibaba.alink.common.MTable;
+import com.alibaba.alink.common.exceptions.AkIllegalArgumentException;
 import com.alibaba.alink.common.exceptions.AkIllegalOperationException;
 import com.alibaba.alink.common.exceptions.AkIllegalOperatorParameterException;
 import com.alibaba.alink.common.exceptions.AkPreconditions;
 import com.alibaba.alink.common.lazy.LazyEvaluation;
 import com.alibaba.alink.common.utils.TableUtil;
 import com.alibaba.alink.operator.batch.utils.DiveVisualizer.DiveVisualizerConsumer;
+import com.alibaba.alink.operator.common.sql.functions.LocalAggFunction;
 import com.alibaba.alink.operator.common.statistics.basicstatistic.TableSummary;
 import com.alibaba.alink.operator.local.dataproc.FirstNLocalOp;
 import com.alibaba.alink.operator.local.dataproc.SampleLocalOp;
@@ -25,10 +27,15 @@ import com.alibaba.alink.operator.local.lazy.LocalLazyObjectsManager;
 import com.alibaba.alink.operator.local.source.BaseSourceLocalOp;
 import com.alibaba.alink.operator.local.source.MemSourceLocalOp;
 import com.alibaba.alink.operator.local.source.TableSourceLocalOp;
+import com.alibaba.alink.operator.local.sql.AsLocalOp;
+import com.alibaba.alink.operator.local.sql.DistinctLocalOp;
+import com.alibaba.alink.operator.local.sql.FilterLocalOp;
 import com.alibaba.alink.operator.local.sql.GroupByLocalOp;
+import com.alibaba.alink.operator.local.sql.OrderByLocalOp;
 import com.alibaba.alink.operator.local.sql.SelectLocalOp;
 import com.alibaba.alink.operator.local.statistics.InternalFullStatsLocalOp;
 import com.alibaba.alink.operator.local.statistics.SummarizerLocalOp;
+import com.alibaba.alink.operator.local.utils.LocalCheckpointManagerInterface;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.Serializable;
@@ -53,6 +60,15 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	 * The side outputs of operator that be similar to the stream's side outputs.
 	 */
 	private MTable[] sideOutputs = null;
+
+	/**
+	 * NOTE:
+	 * If use localCheckpointManager and checkpointName,
+	 * the data will not be saved to above private member: output and sideOutputs
+	 */
+	private LocalCheckpointManagerInterface localCheckpointManager = null;
+
+	private String checkpointName = null;
 
 	/**
 	 * Construct the operator with empty Params.
@@ -89,6 +105,20 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 		return this.params;
 	}
 
+	public T enableCheckpoint(LocalCheckpointManagerInterface localCheckpointManager, String checkpointName) {
+		if (null == localCheckpointManager || null == checkpointName) {
+			throw new AkIllegalArgumentException("localCheckpointManager or checkpointName can't be null.");
+		}
+		if (localCheckpointManager.isRegisteredNode(checkpointName)) {
+			throw new AkIllegalArgumentException("checkpointName(" + checkpointName + ") is re-used.");
+		} else {
+			localCheckpointManager.registerNode(checkpointName);
+		}
+		this.localCheckpointManager = localCheckpointManager;
+		this.checkpointName = checkpointName;
+		return (T) this;
+	}
+
 	/**
 	 * Returns the table held by operator.
 	 *
@@ -96,16 +126,37 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	 */
 	public MTable getOutputTable() {
 		if (null == this.output) {
-			throw new AkIllegalOperationException(
-				"There is no output. Please call current LocalOperator's 'link' or related method firstly, "
-					+ "or this LocalOperator has no output.");
+			if (null != this.localCheckpointManager) {
+				return this.localCheckpointManager.loadNodeOutput(this.checkpointName);
+			} else {
+				throw new AkIllegalOperationException(
+					"There is no output. Please call current LocalOperator's 'link' or related method firstly, "
+						+ "or this LocalOperator has no output.");
+			}
 		} else {
 			return this.output;
 		}
 	}
 
+	/**
+	 * Set the table held by operator.
+	 *
+	 * @param output the output table.
+	 */
+	protected void setOutputTable(MTable output) {
+		if (null != this.localCheckpointManager) {
+			this.localCheckpointManager.saveNodeOutput(this.checkpointName, output, false);
+		} else {
+			this.output = output;
+		}
+	}
+
 	public boolean isNullOutputTable() {
-		return null == this.output;
+		if (null != this.localCheckpointManager) {
+			return !this.localCheckpointManager.isSavedNode(this.checkpointName);
+		} else {
+			return null == this.output;
+		}
 	}
 
 	@Deprecated
@@ -119,7 +170,20 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	 * @return the side outputs.
 	 */
 	protected MTable[] getSideOutputTables() {
-		return this.sideOutputs;
+		if (null != this.localCheckpointManager) {
+			int n = this.localCheckpointManager.countNodeSideOutputs(this.checkpointName);
+			if (n > 0) {
+				MTable[] result = new MTable[n];
+				for (int i = 0; i < n; i++) {
+					result[i] = this.localCheckpointManager.loadNodeSideOutput(this.checkpointName, i);
+				}
+				return result;
+			} else {
+				return null;
+			}
+		} else {
+			return this.sideOutputs;
+		}
 	}
 
 	@Deprecated
@@ -128,20 +192,38 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	}
 
 	public LocalOperator <?> getSideOutput(int idx) {
-		if (null == this.getSideOutputTables()) {
-			throw new AkIllegalOperationException("There is no side output. "
-				+ "Please call 'link' method firstly, or this LocalOperator has no SideOutput.");
-		} else if (idx < 0 || idx >= this.getSideOutputTables().length) {
-			throw new AkIllegalOperationException(
-				"The index of side output, #" + idx + " , is out of range. Total number of side outputs is "
-					+ this.getSideOutputCount() + ".");
+		if (null != this.localCheckpointManager) {
+			int n = this.localCheckpointManager.countNodeSideOutputs(this.checkpointName);
+			if (0 == n) {
+				throw new AkIllegalOperationException("There is no side output. "
+					+ "Please call 'link' method firstly, or this LocalOperator has no SideOutput.");
+			} else if (idx < 0 || idx >= n) {
+				throw new AkIllegalOperationException(
+					"The index of side output, #" + idx + " , is out of range. Total number of side outputs is " + n
+						+ ".");
+			} else {
+				return new MemSourceLocalOp(this.localCheckpointManager.loadNodeSideOutput(this.checkpointName, idx));
+			}
 		} else {
-			return new MemSourceLocalOp(this.getSideOutputTables()[idx]);
+			if (null == this.sideOutputs) {
+				throw new AkIllegalOperationException("There is no side output. "
+					+ "Please call 'link' method firstly, or this LocalOperator has no SideOutput.");
+			} else if (idx < 0 || idx >= this.sideOutputs.length) {
+				throw new AkIllegalOperationException(
+					"The index of side output, #" + idx + " , is out of range. Total number of side outputs is "
+						+ this.sideOutputs.length + ".");
+			} else {
+				return new MemSourceLocalOp(this.sideOutputs[idx]);
+			}
 		}
 	}
 
 	public int getSideOutputCount() {
-		return null == this.getSideOutputTables() ? 0 : this.getSideOutputTables().length;
+		if (null != this.localCheckpointManager) {
+			return this.localCheckpointManager.countNodeSideOutputs(this.checkpointName);
+		} else {
+			return null == this.sideOutputs ? 0 : this.sideOutputs.length;
+		}
 	}
 
 	/**
@@ -150,21 +232,16 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	 * @param sideOutputs the side outputs set the operator.
 	 */
 	protected void setSideOutputTables(MTable[] sideOutputs) {
-		this.sideOutputs = sideOutputs;
+		if (null != this.localCheckpointManager) {
+			this.localCheckpointManager.saveNodeSideOutputs(this.checkpointName, sideOutputs, false);
+		} else {
+			this.sideOutputs = sideOutputs;
+		}
 	}
 
 	@Deprecated
 	protected void setSideOutputs(MTable[] sideOutputs) {
 		setSideOutputTables(sideOutputs);
-	}
-
-	/**
-	 * Set the table held by operator.
-	 *
-	 * @param output the output table.
-	 */
-	protected void setOutputTable(MTable output) {
-		this.output = output;
 	}
 
 	public List <Row> collect() {
@@ -298,7 +375,36 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	 * @param inputs the linked inputs
 	 * @return the linked this object
 	 */
-	public abstract T linkFrom(LocalOperator <?>... inputs);
+	public final T linkFrom(LocalOperator <?>... inputs) {
+		if (!existCheckpoint()) {
+			try {
+				linkFromImpl(inputs);
+			} catch (Exception ex) {
+				if (null != this.localCheckpointManager) {
+					this.localCheckpointManager.removeUnfinishedNodeDir(this.checkpointName);
+				}
+				throw ex;
+			}
+			markCheckpointSaved();
+		}
+		return (T) this;
+	}
+
+	protected boolean existCheckpoint() {
+		if (null != this.localCheckpointManager) {
+			return this.localCheckpointManager.isSavedNode(this.checkpointName);
+		} else {
+			return false;
+		}
+	}
+
+	protected void markCheckpointSaved() {
+		if (null != this.localCheckpointManager) {
+			this.localCheckpointManager.setNodeSaved(this.checkpointName);
+		}
+	}
+
+	protected abstract void linkFromImpl(LocalOperator <?>... inputs);
 
 	/**
 	 * Lazily link from others {@link LocalOperator}. The actual {@link LocalOperator#linkFrom} is called only when all
@@ -335,7 +441,7 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	}
 
 	public LocalOperator <?> select(String fields) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor().select(this, fields);
+		return this.link(new SelectLocalOp().setClause(fields));
 	}
 
 	public LocalOperator <?> select(String[] fields) {
@@ -343,26 +449,19 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	}
 
 	public LocalOperator <?> as(String fields) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor().as(this, fields);
+		return new AsLocalOp(fields).linkFrom(this);
 	}
 
 	public LocalOperator <?> as(String[] fields) {
-		StringBuilder sbd = new StringBuilder();
-		for (int i = 0; i < fields.length; i++) {
-			if (i > 0) {
-				sbd.append(",");
-			}
-			sbd.append(fields[i]);
-		}
-		return as(sbd.toString());
+		return as(String.join(",", fields));
 	}
 
 	public LocalOperator <?> where(String predicate) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor().where(this, predicate);
+		return filter(predicate);
 	}
 
 	public LocalOperator <?> filter(String predicate) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor().filter(this, predicate);
+		return new FilterLocalOp(predicate).linkFrom(this);
 	}
 
 	/**
@@ -371,48 +470,65 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	 * @return The resulted <code>BatchOperator</code> of the "distinct" operation.
 	 */
 	public LocalOperator <?> distinct() {
-		return LocalMLEnvironment.getInstance().getSqlExecutor().distinct(this);
+		return new DistinctLocalOp().linkFrom(this);
 	}
 
-	public LocalOperator <?> orderBy(String fieldName, int limit, boolean isAscending) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor()
-			.orderBy(this, fieldName, isAscending, limit);
+	public LocalOperator <?> orderBy(String orderClause, int limit, boolean isAscending) {
+		return new OrderByLocalOp()
+			.setLimit(limit)
+			.setClause(orderClause)
+			.setOrder(isAscending ? "asc" : "desc")
+			.linkFrom(this);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a specific range of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
-	 * @param offset    The starting position of records to keep.
-	 * @param fetch     The  number of records to keep.
+	 * @param orderClause The name of the field by which the records are ordered.
+	 * @param offset      The starting position of records to keep.
+	 * @param fetch       The  number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public LocalOperator <?> orderBy(String fieldName, int offset, int fetch) {
-		return orderBy(fieldName, offset, fetch, true);
+	public LocalOperator <?> orderBy(String orderClause, int offset, int fetch) {
+		return orderBy(orderClause, offset, fetch, true);
 	}
 
-	public LocalOperator <?> orderBy(String fieldName, int offset, int fetch, boolean isAscending) {
-		return LocalMLEnvironment.getInstance().getSqlExecutor()
-			.orderBy(this, fieldName, isAscending, offset, fetch);
+	public LocalOperator <?> orderBy(String orderClause, int offset, int fetch, boolean isAscending) {
+		return new OrderByLocalOp()
+			.setOffset(offset)
+			.setFetch(fetch)
+			.setClause(orderClause)
+			.setOrder(isAscending ? "asc" : "desc")
+			.linkFrom(this);
 	}
 
 	/**
 	 * Order the records by a specific field and keeping a limited number of records.
 	 *
-	 * @param fieldName The name of the field by which the records are ordered.
-	 * @param limit     The maximum number of records to keep.
+	 * @param orderClause The name of the field by which the records are ordered.
+	 * @param limit       The maximum number of records to keep.
 	 * @return The resulted <code>BatchOperator</code> of the "orderBy" operation.
 	 */
-	public LocalOperator <?> orderBy(String fieldName, int limit) {
-		return orderBy(fieldName, limit, true);
+	public LocalOperator <?> orderBy(String orderClause, int limit) {
+		return orderBy(orderClause, limit, true);
 	}
 
 	public LocalOperator <?> groupBy(String[] groupCols, String selectClause) {
-		return groupBy(String.join(",", groupCols), selectClause);
+		String[] newGroupCols = groupCols.clone();
+		for (int i = 0; i < newGroupCols.length; i++) {
+			if (!newGroupCols[i].contains("`")) {
+				newGroupCols[i] = "`" + newGroupCols[i].trim() + "`";
+			}
+		}
+		return groupBy(String.join(",", newGroupCols), selectClause);
 	}
 
 	public LocalOperator <?> groupBy(String groupByPredicate, String selectClause) {
 		return new GroupByLocalOp(groupByPredicate, selectClause).linkFrom(this);
+	}
+
+	public LocalOperator <?> groupBy(String selectClause) {
+		return groupBy("1", selectClause).linkFrom(this);
 	}
 
 	protected static LocalOperator <?> checkAndGetFirst(LocalOperator <?>... inputs) {
@@ -459,7 +575,8 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	}
 
 	/**
-	 * Register the table of this operator the default {@link LocalMLEnvironment}. An operator can register multiple
+	 * Register the table of this operator the default {@link LocalMLEnvironment}. An operator can register
+	 * multiple
 	 * times with different names.
 	 *
 	 * @param name The name to register with.
@@ -479,6 +596,10 @@ public abstract class LocalOperator<T extends LocalOperator <T>>
 	}
 
 	public static void registerFunction(String name, TableFunction <Row> function) {
+		LocalMLEnvironment.getInstance().getSqlExecutor().addFunction(name, function);
+	}
+
+	public static void registerFunction(String name, LocalAggFunction function) {
 		LocalMLEnvironment.getInstance().getSqlExecutor().addFunction(name, function);
 	}
 

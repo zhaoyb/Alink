@@ -29,7 +29,7 @@ public class FmClassifierModelInfoBatchOp
 	}
 
 	@Override
-	protected FmClassifierModelInfo createModelInfo(List <Row> rows) {
+	public FmClassifierModelInfo createModelInfo(List <Row> rows) {
 		return new FmClassifierModelInfo(rows);
 	}
 

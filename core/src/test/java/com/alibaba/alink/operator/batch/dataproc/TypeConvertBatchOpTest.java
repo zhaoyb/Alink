@@ -45,6 +45,7 @@ public class TypeConvertBatchOpTest extends AlinkTestBase {
 		);
 
 		BatchOperator <?> mSource = new MemSourceBatchOp(rows, schemaStr);
+		mSource.print();
 
 		BatchOperator<?> typeConvert = new TypeConvertBatchOp()
 			.setTargetType("double")

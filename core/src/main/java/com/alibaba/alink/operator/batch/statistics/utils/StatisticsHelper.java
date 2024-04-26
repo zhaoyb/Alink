@@ -84,7 +84,7 @@ public class StatisticsHelper {
 				public TableSummary map(TableSummarizer summarizer) {
 					return summarizer.toSummary();
 				}
-			}).name("toSummary");
+			}).name("to_summary");
 	}
 
 	/**
@@ -299,6 +299,7 @@ public class StatisticsHelper {
 	private static DataSet <TableSummarizer> summarizer(DataSet <Row> data, TableSchema tableSchema, boolean bCov) {
 		return data
 			.mapPartition(new TableSummarizerPartition(tableSchema, bCov))
+			.name("summary_map")
 			.reduce(new ReduceFunction <TableSummarizer>() {
 				private static final long serialVersionUID = 964700189305139868L;
 
@@ -306,7 +307,8 @@ public class StatisticsHelper {
 				public TableSummarizer reduce(TableSummarizer left, TableSummarizer right) {
 					return TableSummarizer.merge(left, right);
 				}
-			});
+			})
+			.name("summary_reduce");
 	}
 
 	public static DataSet <SummaryResultTable> getSRT(BatchOperator<?> in, HasStatLevel_L1.StatLevel statLevel) {

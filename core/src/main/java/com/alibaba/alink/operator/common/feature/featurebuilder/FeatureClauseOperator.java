@@ -3,6 +3,10 @@ package com.alibaba.alink.operator.common.feature.featurebuilder;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 
+import com.alibaba.alink.common.sql.builtin.agg.BaseSummaryUdaf.SummaryData;
+import com.alibaba.alink.common.sql.builtin.agg.MaxBatchUdaf;
+import com.alibaba.alink.common.sql.builtin.agg.MinBatchUdaf;
+import com.alibaba.alink.common.sql.builtin.agg.SummaryUdaf;
 import com.alibaba.alink.common.type.AlinkTypes;
 import com.alibaba.alink.common.sql.builtin.agg.AvgUdaf;
 import com.alibaba.alink.common.sql.builtin.agg.BaseUdaf;
@@ -62,9 +66,13 @@ public enum FeatureClauseOperator {
 
 	MIN_PRECEDING(RES_TYPE, new MinUdaf(true)),
 
+	MIN_BATCH(RES_TYPE, new MinBatchUdaf()),
+
 	MAX(RES_TYPE, new MaxUdaf()),
 
 	MAX_PRECEDING(RES_TYPE, new MaxUdaf(true)),
+
+	MAX_BATCH(RES_TYPE, new MaxBatchUdaf()),
 
 	STDDEV_SAMP(RES_TYPE, new StddevSampUdaf()),
 
@@ -148,7 +156,9 @@ public enum FeatureClauseOperator {
 
 	MTABLE_AGG_PRECEDING(AlinkTypes.M_TABLE, new MTableAgg(true)),
 
-	MTABLE_AGG(AlinkTypes.M_TABLE, new MTableAgg(false));
+	MTABLE_AGG(AlinkTypes.M_TABLE, new MTableAgg(false)),
+
+	SUMMARY(TypeInformation.of(SummaryData.class), new SummaryUdaf());
 
 	private final TypeInformation <?> resType;
 	BaseUdaf calc;

@@ -9,8 +9,8 @@ import com.alibaba.alink.operator.common.tree.FeatureMeta;
  * DataSet.
  */
 public class DenseData {
-	private final static double CONTINUOUS_NULL = Double.NaN;
-	private final static int CATEGORICAL_NULL = Integer.MAX_VALUE;
+	final static double CONTINUOUS_NULL = Double.NaN;
+	final static int CATEGORICAL_NULL = Integer.MAX_VALUE;
 
 	/**
 	 * flag for the length of data buffer array.
@@ -31,10 +31,10 @@ public class DenseData {
 	 * Features.
 	 */
 	FeatureMeta[] featureMetas;
-	private final Object[] featureValues;
+	final Object[] featureValues;
 
 	FeatureMeta labelMeta;
-	private Object labelValues;
+	Object labelValues;
 
 	double[] weights;
 
@@ -66,6 +66,10 @@ public class DenseData {
 			}
 		}
 
+	}
+
+	public int getNumRows() {
+		return this.m;
 	}
 
 	void resetM(int m) {
@@ -122,9 +126,10 @@ public class DenseData {
 			}
 
 			// initial weights.
-			if (labelMeta != null && instance.getArity() == n + 2
-				|| labelMeta == null && instance.getArity() == n + 1) {
+			if (labelMeta != null && instance.getArity() == n + 2) {
 				weights[i] = (double) instance.getField(n + 1);
+			} else if (labelMeta == null && instance.getArity() == n + 1) {
+				weights[i] = (double) instance.getField(n);
 			} else {
 				weights[i] = 1.0;
 			}

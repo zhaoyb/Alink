@@ -24,7 +24,7 @@ public final class CartModelInfoBatchOp
 	}
 
 	@Override
-	protected DecisionTreeModelInfo createModelInfo(List <Row> rows) {
+	public DecisionTreeModelInfo createModelInfo(List <Row> rows) {
 		return new DecisionTreeModelInfo(rows);
 	}
 }

@@ -5,10 +5,18 @@ import com.alibaba.alink.common.sql.builtin.agg.BaseSummaryUdaf.SummaryData;
 
 public abstract class BaseSummaryUdaf extends BaseUdaf <Object, SummaryData> {
 	boolean excludeLast = false;
+	boolean calc23 = true;
 
-	public BaseSummaryUdaf() {}
+	public BaseSummaryUdaf() {
+		this(false, true);
+	}
 
 	public BaseSummaryUdaf(boolean excludeLast) {
+		this(excludeLast, true);
+	}
+
+	public BaseSummaryUdaf(boolean excludeLast, boolean calc23) {
+		this.calc23 = calc23;
 		this.excludeLast = excludeLast;
 	}
 
@@ -44,7 +52,7 @@ public abstract class BaseSummaryUdaf extends BaseUdaf <Object, SummaryData> {
 
 	@Override
 	public SummaryData createAccumulator() {
-		return new SummaryData(excludeLast);
+		return new SummaryData(excludeLast, calc23);
 	}
 
 	public static class SummaryData {
@@ -54,14 +62,17 @@ public abstract class BaseSummaryUdaf extends BaseUdaf <Object, SummaryData> {
 		public double cubicSum = 0;
 
 		boolean excludeLast = false;
+
+		boolean calc23 = true;
 		public Number thisData = null;
 		NumberTypeHandle handle = null;
 
 		public SummaryData() {
 		}
 
-		public SummaryData(boolean excludeLast) {
+		public SummaryData(boolean excludeLast, boolean calc23) {
 			this.excludeLast = excludeLast;
+			this.calc23 = calc23;
 		}
 
 		public Long getCount() {
@@ -72,81 +83,76 @@ public abstract class BaseSummaryUdaf extends BaseUdaf <Object, SummaryData> {
 		}
 
 		public Number getSum() {
-			if (count == 0) {
-				return handle.transformData(0.0);
-			}
-			return handle.transformData(sum);
+			return count == 0 ? null : handle.transformData(sum);
 		}
 
 		public Number getSquareSum() {
-			if (count == 0) {
-				return handle.transformData(0.0);
-			}
-			return handle.transformData(squareSum);
+			return count == 0 ? null : handle.transformData(squareSum);
 		}
 
 		public Number getAvg() {
-			if (count == 0) {
-				return handle.transformData(0.0);
-			}
-			double res = sum / count;
-			return handle.transformData(res);
+			return count == 0 ? null : handle.transformData(sum / count);
 		}
 
 		public Number getVarPop() {
 			if (count == 0) {
-				return handle.transformData(0.0);
+				return null;
 			}
+
 			double res = (squareSum - Math.pow(sum, 2) / count) / count;
+
 			if (Double.isNaN(res)) {
-				return handle.transformData(0.0);
+				res = 0.0;
 			}
+
 			return handle.transformData(res);
 		}
 
 		public Number getVarSamp() {
 			if (count == 0) {
-				return handle.transformData(0.0);
+				return null;
 			}
 			double res = getVarPop().doubleValue() * count / (count - 1);
+
 			if (Double.isNaN(res)) {
-				return handle.transformData(0.0);
+				res = 0.0;
 			}
 			return handle.transformData(res);
 		}
 
 		public Number getStdPop() {
 			if (count == 0) {
-				return handle.transformData(0.0);
+				return null;
 			}
 			double res = Math.sqrt(getVarPop().doubleValue());
 			if (Double.isNaN(res)) {
-				return handle.transformData(0.0);
+				res = 0.0;
 			}
 			return handle.transformData(res);
 		}
 
 		public Number getStdSamp() {
 			if (count == 0) {
-				return handle.transformData(0.0);
+				return null;
 			}
 			double res = Math.sqrt(getVarSamp().doubleValue());
+
 			if (Double.isNaN(res)) {
-				return handle.transformData(0);
+				res = 0.0;
 			}
 			return handle.transformData(res);
 		}
 
 		public Number getSkewness() {
 			if (count == 0) {
-				return handle.transformData(0.0);
+				return null;
 			}
 			double avg = getAvg().doubleValue();
 			double std = getStdPop().doubleValue();
 			double res = (cubicSum / count - avg * (3 * Math.pow(std, 2) + Math.pow(avg, 2)))
 				/ Math.pow(std, 3);
 			if (Double.isNaN(res)) {
-				return handle.transformData(0);
+				res = 0.0;
 			}
 			return handle.transformData(res);
 		}
@@ -185,8 +191,10 @@ public abstract class BaseSummaryUdaf extends BaseUdaf <Object, SummaryData> {
 			if (data != null) {
 				double doubleData = data.doubleValue();
 				sum += doubleData;
-				squareSum += Math.pow(doubleData, 2);
-				cubicSum += Math.pow(doubleData, 3);
+				if (calc23) {
+					squareSum += Math.pow(doubleData, 2);
+					cubicSum += Math.pow(doubleData, 3);
+				}
 				++count;
 			}
 		}
@@ -231,6 +239,12 @@ public abstract class BaseSummaryUdaf extends BaseUdaf <Object, SummaryData> {
 				return false;
 			}
 			return true;
+		}
+
+		public String toString() {
+			return "count: " + this.getCount() +
+				" sum: " + this.getSum() +
+				" avg: " + this.getAvg();
 		}
 
 	}

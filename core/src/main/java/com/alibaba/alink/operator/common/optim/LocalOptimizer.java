@@ -15,7 +15,6 @@ import com.alibaba.alink.operator.local.AlinkLocalSession.TaskRunner;
 import com.alibaba.alink.operator.local.LocalOperator;
 import com.alibaba.alink.params.regression.HasEpsilon;
 import com.alibaba.alink.params.shared.HasNumCorrections_30;
-import com.alibaba.alink.params.shared.HasNumThreads;
 import com.alibaba.alink.params.shared.iter.HasMaxIterDefaultAs100;
 import com.alibaba.alink.params.shared.linear.HasEpsilonDefaultAs0000001;
 import com.alibaba.alink.params.shared.linear.HasL1;
@@ -34,7 +33,7 @@ import java.util.Random;
  */
 public class LocalOptimizer {
 
-	private static final int NEWTON_MAX_FEATURE_NUM = 1024;
+	public static final int NEWTON_MAX_FEATURE_NUM = 1024;
 	private static final double EPS = 1.0e-18;
 
 	/**
@@ -50,9 +49,7 @@ public class LocalOptimizer {
 														  DenseVector initCoef, Params params) {
 		LinearTrainParams.OptimMethod method = params.get(LinearTrainParams.OPTIM_METHOD);
 		if (null == method) {
-			if (trainData.get(0).f2.size() <= NEWTON_MAX_FEATURE_NUM) {
-				method = OptimMethod.Newton;
-			} else if (params.get(HasL1.L_1) > 0) {
+			if (params.get(HasL1.L_1) > 0) {
 				method = OptimMethod.OWLQN;
 			} else {
 				method = OptimMethod.LBFGS;
